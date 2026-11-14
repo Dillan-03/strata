@@ -1,0 +1,68 @@
+name: Chore
+description: Maintenance, infrastructure, credentials or setup that needs manual action.
+title: "[Chore] "
+labels: ["type:chore"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste secret values here.** List only the names of secrets or variables.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What needs configuring and why.
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason for manual intervention
+      description: Why this can't be automated.
+    validations:
+      required: true
+  - type: textarea
+    id: action
+    attributes:
+      label: Required action
+      description: Exact, numbered steps for the repository owner.
+      value: |
+        1.
+    validations:
+      required: true
+  - type: textarea
+    id: secrets
+    attributes:
+      label: Required GitHub secrets or variables
+      description: Names only. Write "None" if there are none.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: How to confirm the setup works.
+    validations:
+      required: true
+  - type: textarea
+    id: blocked
+    attributes:
+      label: Blocked features or workflows
+      description: Link the issues or PRs that wait on this.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      description: Exactly when this can be closed.
+    validations:
+      required: true

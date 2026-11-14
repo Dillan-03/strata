@@ -1,0 +1,57 @@
+name: Issue title
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: issue-title-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate issue title
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { classify, guidance } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/issue-title.mjs`);
+            const issue = context.payload.issue;
+            const marker = '<!-- issue-title-check -->';
+            const result = classify(issue.title);
+
+            if (result.valid) {
+              core.info(`Title OK: ${issue.title}`);
+              return;
+            }
+
+            if (result.corrected) {
+              await github.rest.issues.update({ ...context.repo, issue_number: issue.number, title: result.corrected });
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: issue.number,
+                body: `${marker}\nRenamed to \`${result.corrected}\` to match the required \`[Feature]\`, \`[Bug]\` or \`[Chore]\` format.`,
+              });
+              core.notice(`Corrected title to: ${result.corrected}`);
+              return;
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number: issue.number });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            const body = `${marker}\n${guidance(issue.title)}`;
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body });
+            }
+            core.setFailed('Issue title must start with [Feature], [Bug] or [Chore].');

@@ -1,0 +1,75 @@
+name: Bug
+description: Report something that's broken or wrong.
+title: "[Bug] "
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please redact secrets before posting. Strata masks tokens and keys in its UI, but copy-pasted config files and logs can still contain them.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "15.3"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Application version
+      description: Strata → About Strata.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant redacted logs
+      render: text
+  - type: textarea
+    id: regression
+    attributes:
+      label: Regression test requirements
+      description: What automated test should stop this from coming back?
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical — crash, data loss or secret exposure
+        - High — a core feature is wrong or unusable
+        - Medium — wrong in some cases, workaround exists
+        - Low — cosmetic
+    validations:
+      required: true
