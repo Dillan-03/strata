@@ -31,8 +31,15 @@ brew untap "$tap" >/dev/null 2>&1 || true
 brew tap-new --no-git "$tap" >/dev/null
 tap_dir="$(brew --repository "$tap")"
 mkdir -p "$tap_dir/Casks"
-"$root/scripts/render-cask.sh" "$version" "$sha" "file://$zip" > "$tap_dir/Casks/strata-inspector.rb"
+cask_file="$tap_dir/Casks/strata-inspector.rb"
+
+echo "== audit (cask as published)"
+"$root/scripts/render-cask.sh" "$version" "$sha" > "$cask_file"
 brew style --cask "$tap/strata-inspector"
+# Offline: the release URL doesn't exist yet. Signing is checked separately by sign-and-notarize.sh.
+brew audit --cask --strict --no-signing "$tap/strata-inspector"
+
+"$root/scripts/render-cask.sh" "$version" "$sha" "file://$zip" > "$cask_file"
 
 echo "== install"
 brew install --cask "$tap/strata-inspector"
