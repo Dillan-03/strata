@@ -42,12 +42,14 @@ public struct Inspector: Sendable {
         items += MCPScanner(context: context, layers: layers, plugins: plugins).scan()
         items += InstructionScanner(context: context, layers: layers).scan()
 
-        let resolver = Resolver { context.displayPath(URL(fileURLWithPath: $0)) }
+        let displayPath = { (path: String) in context.displayPath(URL(fileURLWithPath: path)) }
+        let resolved = Resolver(displayPath: displayPath).resolve(items)
+        DiagnosticRules(displayPath: displayPath).diagnose(resolved).forEach(context.report)
 
         return InspectionReport(
             repositoryPath: context.repository.path,
             scannedAt: date,
-            items: resolver.resolve(items),
+            items: resolved,
             diagnostics: context.diagnostics.sorted { ($0.severity, $0.title) < ($1.severity, $1.title) },
             sources: context.sources
         )
