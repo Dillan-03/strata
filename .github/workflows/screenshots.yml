@@ -60,6 +60,13 @@ jobs:
           xcodebuild test -project App/Strata.xcodeproj -scheme Strata -destination 'platform=macOS' \
             -only-testing:StrataUITests/ScreenshotTests -resultBundlePath build/Screenshots.xcresult -quiet
 
+      - name: Report test results
+        if: always()
+        run: |
+          if [ -d build/Screenshots.xcresult ]; then
+            python3 .github/scripts/xcresult-report.py build/Screenshots.xcresult "Screenshot test"
+          fi
+
       - name: Extract screenshots
         run: |
           xcrun xcresulttool export attachments --path build/Screenshots.xcresult --output-path build/attachments
