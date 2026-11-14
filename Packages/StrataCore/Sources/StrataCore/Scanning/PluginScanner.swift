@@ -106,7 +106,8 @@ struct PluginScanner {
         if let version = (manifest["version"] as? String) ?? applicable?.version { metadata.append(Metadatum("Version", version)) }
         if let scope = applicable?.scope { metadata.append(Metadatum("Install scope", scope)) }
         if let root { metadata.append(Metadatum("Install path", context.displayPath(root))) }
-        if let decidedBy { metadata.append(Metadatum("Enabled by", "\(decidedBy.label) (\(context.displayPath(decidedBy.url)))")) }
+        if let decidedBy { metadata.append(Metadatum("Decided by", "\(decidedBy.label) (\(context.displayPath(decidedBy.url)))")) }
+        metadata.append(contentsOf: mentions(of: id))
         if rootExists, let root { metadata.append(contentsOf: componentSummary(root: root, manifest: manifest)) }
 
         let stage: Stage
@@ -167,7 +168,7 @@ struct PluginScanner {
 
                 var metadata = [Metadatum("Plugin ID", id), Metadatum("Folder", context.displayPath(folder))]
                 if let version = manifest["version"] as? String { metadata.append(Metadatum("Version", version)) }
-                if let decidedBy { metadata.append(Metadatum("Enabled by", "\(decidedBy.label) (\(context.displayPath(decidedBy.url)))")) }
+                if let decidedBy { metadata.append(Metadatum("Decided by", "\(decidedBy.label) (\(context.displayPath(decidedBy.url)))")) }
                 metadata.append(contentsOf: componentSummary(root: folder, manifest: manifest))
 
                 let item = ConfigItem(
@@ -196,6 +197,15 @@ struct PluginScanner {
     }
 
     // MARK: - Helpers
+
+    /// Every settings file that mentions the plugin id, highest precedence first, for the "also set in" explanation.
+    private func mentions(of id: String) -> [Metadatum] {
+        let values = layers.sorted { $0.precedence < $1.precedence }.compactMap { layer -> String? in
+            guard let value = JSONValue.bool(layer.dictionary("enabledPlugins")?[id]) else { return nil }
+            return "\(layer.label): \(value ? "on" : "off")"
+        }
+        return values.count > 1 ? [Metadatum("Set in", values.joined(separator: "; "))] : []
+    }
 
     /// The documented rule: each plugin id takes its value from the highest-precedence settings file that mentions it.
     private func enablement(for id: String, defaultEnabled: Bool, installed: Bool) -> (Bool?, SettingsLayer?) {
