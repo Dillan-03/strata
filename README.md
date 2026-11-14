@@ -11,6 +11,14 @@ It's for questions like *"Why isn't my repo's `/deploy` skill running?"* (a pers
 
 Strata is read-only. It never edits Claude Code configuration, runs MCP servers, or makes network requests.
 
+![Strata's inspector for a /deploy skill: the global copy runs and the repository's copy is overridden](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/inspector.png)
+
+| Issues | MCP servers, with secrets masked |
+| --- | --- |
+| ![The issues list, led by a global skill hiding the repository's copy](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/issues.png) | ![An MCP server from .mcp.json, with its password masked and approval shown as conditional](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/mcp.png) |
+
+Screenshots are captured from the real app by CI on every change to `main`, using made-up configuration.
+
 ## Requirements
 
 - macOS 14 Sonoma or later
