@@ -116,10 +116,24 @@ jobs:
         run: |
           if [ -d build/TestResults.xcresult ]; then
             xcrun xcresulttool get test-results summary --path build/TestResults.xcresult --compact > summary.json || exit 0
+            xcrun xcresulttool get test-results tests --path build/TestResults.xcresult --compact > tests.json || echo '{}' > tests.json
             python3 - <<'PY'
           import json
           s = json.load(open("summary.json"))
           print(f"::notice title=App tests::result={s.get('result')} total={s.get('totalTestCount')} passed={s.get('passedTests')} failed={s.get('failedTests')} skipped={s.get('skippedTests')}")
+
+          def walk(node, trail):
+              name = node.get("name", "")
+              kind = node.get("nodeType", "")
+              if kind == "Test Case" and node.get("result") == "Failed":
+                  messages = [c.get("name", "") for c in node.get("children", []) if c.get("nodeType") == "Failure Message"]
+                  detail = " | ".join(messages)[:900] or "no message"
+                  print(f"::error title=Failed: {'/'.join(trail[-1:] + [name])}::{detail}")
+              for child in node.get("children", []):
+                  walk(child, trail + ([name] if kind == "Test Suite" else []))
+
+          for root in json.load(open("tests.json")).get("testNodes", []):
+              walk(root, [])
           PY
           fi
 
