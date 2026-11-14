@@ -13,11 +13,14 @@ struct ContentView: View {
                 if model.isMissing(repository.id) {
                     MissingRepositoryView(repository: repository)
                 } else {
-                    RepositoryHeader(repository: repository)
+                    RepositoryDetailView(repository: repository)
                 }
             } else {
                 EmptyRepositoriesView()
             }
+        }
+        .onChange(of: model.selectedRepositoryID) {
+            model.selectedItemID = nil
         }
     }
 }
@@ -30,17 +33,22 @@ struct SidebarView: View {
         List(selection: $model.selectedRepositoryID) {
             Section("Repositories") {
                 ForEach(model.repositories) { repository in
-                    RepositoryRow(repository: repository, isMissing: model.isMissing(repository.id))
-                        .tag(repository.id)
-                        .contextMenu {
-                            if model.isMissing(repository.id) {
-                                Button("Locate…") { model.presentLocatePanel(for: repository.id) }
-                            } else {
-                                Button("Reveal in Finder") { model.revealInFinder(repository.url) }
-                            }
-                            Divider()
-                            Button("Remove from Strata") { model.remove(repository.id) }
+                    RepositoryRow(
+                        repository: repository,
+                        isMissing: model.isMissing(repository.id),
+                        issueCount: model.reports[repository.id]?.diagnostics.filter { $0.severity != .info }.count ?? 0
+                    )
+                    .tag(repository.id)
+                    .contextMenu {
+                        if model.isMissing(repository.id) {
+                            Button("Locate…") { model.presentLocatePanel(for: repository.id) }
+                        } else {
+                            Button("Reveal in Finder") { model.revealInFinder(repository.url) }
+                            Button("Rescan") { Task { await model.scan(repository.id) } }
                         }
+                        Divider()
+                        Button("Remove from Strata") { model.remove(repository.id) }
+                    }
                 }
             }
         }
@@ -60,6 +68,7 @@ struct SidebarView: View {
 private struct RepositoryRow: View {
     let repository: Repository
     let isMissing: Bool
+    let issueCount: Int
 
     var body: some View {
         Label {
@@ -68,27 +77,15 @@ private struct RepositoryRow: View {
         } icon: {
             Image(systemName: isMissing ? "questionmark.folder" : "folder")
         }
+        .badge(issueCount)
         .help(isMissing ? "Can't find \(repository.url.path)" : repository.url.path)
-        .accessibilityLabel(isMissing ? "\(repository.displayName), missing" : repository.displayName)
+        .accessibilityLabel(accessibilityText)
     }
-}
 
-private struct RepositoryHeader: View {
-    let repository: Repository
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(repository.displayName)
-                .font(.title2.weight(.semibold))
-            Text(repository.url.path)
-                .font(.callout.monospaced())
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(20)
-        .navigationTitle(repository.displayName)
-        .navigationSubtitle(repository.url.path)
+    private var accessibilityText: String {
+        if isMissing { return "\(repository.displayName), missing" }
+        if issueCount > 0 { return "\(repository.displayName), \(issueCount) issue\(issueCount == 1 ? "" : "s")" }
+        return repository.displayName
     }
 }
 
