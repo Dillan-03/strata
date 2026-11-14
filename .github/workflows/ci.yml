@@ -35,6 +35,9 @@ jobs:
           bash <(curl -fsSL "https://raw.githubusercontent.com/rhysd/actionlint/v${ACTIONLINT_VERSION}/scripts/download-actionlint.bash") "${ACTIONLINT_VERSION}"
           ./actionlint -color
 
+      - name: shellcheck
+        run: shellcheck scripts/*.sh
+
       - name: SwiftLint
         run: docker run --rm -v "$PWD:/work" -w /work "$SWIFTLINT_IMAGE" swiftlint lint --strict --reporter github-actions-logging
 
