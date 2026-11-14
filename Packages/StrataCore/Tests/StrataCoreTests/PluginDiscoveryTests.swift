@@ -38,6 +38,35 @@ final class PluginDiscoveryTests: XCTestCase {
         XCTAssertEqual(try report.onlyItem(.mcpServer, named: "supabase").origin, "supabase-kit@tools")
     }
 
+    func testHooksFileIsRecordedAsAContribution() throws {
+        let fixture = try Fixture()
+        let root = try installPlugin(fixture, id: "guard@tools", folder: "tools/guard/1.0.0", manifestName: "guard")
+        try fixture.json("hooks/hooks.json", in: root, ["hooks": ["PreToolUse": []]])
+        try fixture.json(".claude/settings.json", in: fixture.home, ["enabledPlugins": ["guard@tools": true]])
+
+        let plugin = try fixture.inspect().onlyItem(.plugin, named: "guard@tools")
+        XCTAssertEqual(plugin.metadataValue("Hooks"), "hooks/hooks.json")
+        XCTAssertEqual(plugin.metadataValue("Contributes"), "1 skill, 1 agent, 1 MCP server, hooks")
+    }
+
+    func testHooksDeclaredInManifestAreRecorded() throws {
+        let fixture = try Fixture()
+        let root = try installPlugin(fixture, id: "guard@tools", folder: "tools/guard/1.0.0", manifestName: "guard")
+        try fixture.json(".claude-plugin/plugin.json", in: root, ["name": "guard", "hooks": "./config/hooks.json"])
+        try fixture.json(".claude/settings.json", in: fixture.home, ["enabledPlugins": ["guard@tools": true]])
+
+        let plugin = try fixture.inspect().onlyItem(.plugin, named: "guard@tools")
+        XCTAssertEqual(plugin.metadataValue("Hooks"), "Declared in plugin.json")
+    }
+
+    func testPluginWithoutHooksHasNoHooksEntry() throws {
+        let fixture = try Fixture()
+        _ = try installPlugin(fixture, id: "supabase-kit@tools", folder: "tools/supabase-kit/1.2.0", manifestName: "supabase-kit")
+        try fixture.json(".claude/settings.json", in: fixture.home, ["enabledPlugins": ["supabase-kit@tools": true]])
+
+        XCTAssertNil(try fixture.inspect().onlyItem(.plugin, named: "supabase-kit@tools").metadataValue("Hooks"))
+    }
+
     func testVersionOneInstallRecordsAreRead() throws {
         let fixture = try Fixture()
         _ = try installPlugin(fixture, id: "kit@tools", folder: "tools/kit/1.0.0", format: 1)
