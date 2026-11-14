@@ -7,7 +7,7 @@ cask "strata-inspector" do
   desc "Inspect where your Claude Code configuration comes from"
   homepage "https://github.com/Dillan-03/verbose-octo-carnival"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Strata.app"
 

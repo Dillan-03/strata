@@ -21,7 +21,7 @@ reported() {
     return 0
   fi
   cat "$log"
-  echo "::error title=$title::$(tail -c 3000 "$log" | perl -pe 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')"
+  echo "::error title=$title::$(tail -n 25 "$log" | perl -pe 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')"
   return 1
 }
 
