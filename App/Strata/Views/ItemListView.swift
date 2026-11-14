@@ -98,6 +98,7 @@ struct ItemRow: View {
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.invocation ?? item.name), \(item.kind.title), \(item.scope.title), \(item.applicability.title)")
+        .accessibilityIdentifier("itemRow.\(item.kind.rawValue).\(item.scope.rawValue).\(item.name)")
     }
 
     private var isStruckThrough: Bool {

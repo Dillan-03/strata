@@ -41,10 +41,12 @@ final class ScreenshotTests: XCTestCase {
         capture(window, as: "inspector")
 
         app.typeKey("4", modifierFlags: .command)
-        let postgres = app.staticTexts["postgres"].firstMatch
-        XCTAssertTrue(postgres.waitForExistence(timeout: 10))
+        let postgres = app.descendants(matching: .any).matching(identifier: "itemRow.mcpServer.project.postgres").firstMatch
+        XCTAssertTrue(postgres.waitForExistence(timeout: 10), "The postgres row isn't in the MCP list")
         postgres.click()
-        XCTAssertTrue(app.staticTexts["Which Copy Runs"].waitForExistence(timeout: 10))
+        // postgres has one definition, so the inspector shows the MCP safety note rather than "Which Copy Runs".
+        let safetyNote = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Strata never runs this command")).firstMatch
+        XCTAssertTrue(safetyNote.waitForExistence(timeout: 10), "The MCP inspector didn't open")
         capture(window, as: "mcp")
     }
 
