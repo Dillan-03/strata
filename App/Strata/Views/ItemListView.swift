@@ -9,7 +9,17 @@ struct ItemListView: View {
     var body: some View {
         @Bindable var model = model
         let groups = Self.groups(model.visibleItems)
-        if groups.isEmpty {
+        if groups.isEmpty, !model.query.isEmpty {
+            ContentUnavailableView {
+                Label("No Matches", systemImage: "magnifyingglass")
+            } description: {
+                Text(model.query.text.isEmpty ? "No items match the current filters." : "No items match “\(model.query.text)” with the current filters.")
+            } actions: {
+                if model.query.hasFilters {
+                    Button("Clear Filters") { model.query.clearFilters() }
+                }
+            }
+        } else if groups.isEmpty {
             ContentUnavailableView {
                 Label("Nothing Here", systemImage: "tray")
             } description: {

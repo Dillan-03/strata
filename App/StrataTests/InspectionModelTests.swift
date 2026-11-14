@@ -60,6 +60,26 @@ final class InspectionModelTests: XCTestCase {
         XCTAssertEqual(model.visibleItems.count, try XCTUnwrap(model.selectedReport).items.count)
     }
 
+    func testSearchAndFiltersNarrowVisibleItemsAndDiagnostics() async throws {
+        let model = try makeModel()
+        model.add(repository)
+        await model.scanSelectedRepository()
+
+        model.category = .skills
+        model.query.text = "repo deploy"
+        XCTAssertEqual(model.visibleItems.map(\.scope), [.project])
+
+        model.query.text = ""
+        model.query.scopes = [.user]
+        XCTAssertEqual(model.visibleItems.map(\.scope), [.user])
+
+        model.query.clearFilters()
+        model.query.text = "hides"
+        XCTAssertEqual(model.visibleDiagnostics.count, 1)
+        model.query.text = "nothing matches this"
+        XCTAssertTrue(model.visibleDiagnostics.isEmpty)
+    }
+
     func testRevealSelectsTheItemAndLeavesIssues() async throws {
         let model = try makeModel()
         model.add(repository)
