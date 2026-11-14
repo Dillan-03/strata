@@ -7,7 +7,9 @@
 #   APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_API_KEY_BASE64
 #
 # Writes "signed" or "unsigned" to build/Release/signing-status.
-set -euo pipefail
+set -Eeuo pipefail
+# Line number only: never echo the failing command here, in case it references a secret.
+trap 'echo "::error title=${BASH_SOURCE[0]##*/}::Failed at line $LINENO"' ERR
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 app="$root/build/Release/Strata.app"

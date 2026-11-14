@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Zips build/Release/Strata.app into dist/Strata-<version>.zip and writes its SHA-256.
 # Usage: scripts/package-release.sh <version>
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "::error title=${BASH_SOURCE[0]##*/}::Failed at line $LINENO: $BASH_COMMAND"' ERR
 
 version="${1:?usage: package-release.sh <version>}"
 root="$(cd "$(dirname "$0")/.." && pwd)"

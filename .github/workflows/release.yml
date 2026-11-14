@@ -69,6 +69,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Verify release commit
+        id: verify
         if: steps.version.outputs.publish == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -85,12 +86,14 @@ jobs:
           fi
 
       - name: Select Xcode
+        id: xcode
         run: |
           latest=$(find /Applications -maxdepth 1 -name 'Xcode_16*.app' | sort -V | tail -1)
           if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
           xcodebuild -version
 
       - name: Install XcodeGen
+        id: xcodegen
         run: |
           curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
           echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
@@ -98,6 +101,7 @@ jobs:
           echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
 
       - name: Release tests
+        id: tests
         run: |
           set -o pipefail
           swift test --package-path Packages/StrataCore
@@ -105,9 +109,11 @@ jobs:
           xcodebuild test -project App/Strata.xcodeproj -scheme Strata -destination 'platform=macOS' -only-testing:StrataTests -quiet
 
       - name: Build Release
+        id: build
         run: scripts/build-release.sh
 
       - name: Sign and notarise
+        id: sign
         env:
           APPLE_DEVELOPER_ID_CERTIFICATE_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_BASE64 }}
           APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
@@ -118,26 +124,43 @@ jobs:
         run: scripts/sign-and-notarize.sh
 
       - name: Package
+        id: package
         run: |
           scripts/package-release.sh "${{ steps.version.outputs.version }}"
           cp build/Release/signing-status dist/signing-status
 
       - name: Smoke test packaged app
+        id: smoke
         run: |
           rm -rf "$RUNNER_TEMP/smoke" && mkdir -p "$RUNNER_TEMP/smoke"
           ditto -x -k "dist/Strata-${{ steps.version.outputs.version }}.zip" "$RUNNER_TEMP/smoke"
           scripts/smoke-test-app.sh "$RUNNER_TEMP/smoke/Strata.app"
 
       - name: Homebrew install, uninstall, reinstall and zap
+        id: homebrew
         run: scripts/cask-smoke-test.sh "${{ steps.version.outputs.version }}" "dist/Strata-${{ steps.version.outputs.version }}.zip"
 
       - name: Upload artifacts
+        id: upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release
           path: dist/
           retention-days: 30
           if-no-files-found: error
+
+      # Step logs can't be read through the checks API, so name the failed step in an annotation.
+      - name: Report failed step
+        if: failure()
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: |
+          echo "$STEPS" | python3 -c '
+          import json, sys
+          for name, step in json.load(sys.stdin).items():
+              if step["outcome"] == "failure":
+                  print(f"::error title=Release step failed::{name}")
+          '
 
   publish:
     name: Publish release

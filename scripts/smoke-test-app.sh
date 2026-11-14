@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Launches an installed or packaged Strata.app, checks it stays running, then quits it.
 # Usage: scripts/smoke-test-app.sh <path to Strata.app>
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "::error title=${BASH_SOURCE[0]##*/}::Failed at line $LINENO: $BASH_COMMAND"' ERR
 
 app="${1:?usage: smoke-test-app.sh <path to Strata.app>}"
 binary="$app/Contents/MacOS/Strata"

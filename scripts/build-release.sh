@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds a universal Release Strata.app into build/Release/Strata.app.
 # Usage: scripts/build-release.sh
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "::error title=${BASH_SOURCE[0]##*/}::Failed at line $LINENO: $BASH_COMMAND"' ERR
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 derived="$root/build/DerivedData"

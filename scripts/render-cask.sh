@@ -2,7 +2,8 @@
 # Writes the Homebrew cask for a release from packaging/strata-inspector.rb.template.
 # Usage: scripts/render-cask.sh <version> <sha256> [url] > Casks/strata-inspector.rb
 # The optional url overrides the GitHub release URL (used by CI to install a locally built zip).
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "::error title=${BASH_SOURCE[0]##*/}::Failed at line $LINENO: $BASH_COMMAND"' ERR
 
 version="${1:?usage: render-cask.sh <version> <sha256> [url]}"
 sha256="${2:?usage: render-cask.sh <version> <sha256> [url]}"
