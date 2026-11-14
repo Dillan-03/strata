@@ -258,6 +258,10 @@ jobs:
           git add Casks/strata-inspector.rb
           git commit -m "[Chore] Update Homebrew cask to $VERSION"
           git push origin "$branch"
-          gh pr create --base main --head "$branch" \
+          # Needs "Allow GitHub Actions to create and approve pull requests" (#21). The release is already
+          # published at this point, so a missing setting is a warning with a manual next step, not a failure.
+          if ! gh pr create --base main --head "$branch" \
             --title "[Chore] Update Homebrew cask to $VERSION" \
-            --body "Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow. Pull requests opened with the workflow token don't trigger CI, so close and reopen this one to run checks before merging."
+            --body "Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow. Pull requests opened with the workflow token don't trigger CI, so close and reopen this one to run checks before merging."; then
+            echo "::warning title=Cask PR not opened::Branch $branch is pushed with the updated cask, but Actions isn't allowed to open pull requests here (see #21). Open a PR from $branch to main by hand."
+          fi
