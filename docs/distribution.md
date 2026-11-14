@@ -11,6 +11,8 @@ brew tap dillan-03/strata https://github.com/Dillan-03/verbose-octo-carnival
 brew install --cask dillan-03/strata/strata-inspector
 ```
 
+Installing by the fully qualified name (`dillan-03/strata/strata-inspector`) trusts only that cask under Homebrew's [tap trust](https://docs.brew.sh/Tap-Trust) rules, which arrived in Homebrew 6. You don't need `brew trust dillan-03/strata`, and the short-name commands below work afterwards.
+
 | Task | Command |
 | --- | --- |
 | Upgrade | `brew upgrade --cask strata-inspector` |
