@@ -93,4 +93,5 @@ assert_config_untouched zap
 if [ "$has_tap_trust" = true ]; then brew untrust --cask "$tap/strata-inspector" >/dev/null; fi
 brew untap "$tap" >/dev/null
 rm -rf "$sentinel_dir" "$HOME/.strata-smoke-claude.json"
-echo "::notice title=Homebrew round trip (macOS $(sw_vers -productVersion), $(brew --version | head -1))::brew style, brew audit --strict, install, launch, uninstall, reinstall and zap passed. ~/.claude was unchanged after every step."
+# No commas in the title: annotation properties are comma-separated.
+echo "::notice title=Homebrew round trip on macOS $(sw_vers -productVersion)::$(brew --version | head -1): brew style, brew audit --strict, install, launch, uninstall, reinstall and zap passed. ~/.claude was unchanged after every step."

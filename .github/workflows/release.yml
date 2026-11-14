@@ -157,8 +157,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macOS 14 is the minimum the app supports; the build itself runs on 15.
-        os: [macos-14, macos-15]
+        # The oldest and newest hosted macOS images. The app targets macOS 14, but GitHub retired the
+        # macos-14 image on 2 November 2026, so 14 is supported without CI coverage.
+        os: [macos-15, macos-26]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:

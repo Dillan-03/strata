@@ -19,7 +19,7 @@ Releases are built entirely by `.github/workflows/release.yml`. Nothing is built
      - runs core and app unit tests
      - builds a universal Release app, signs and notarises it (or ad-hoc signs it)
      - zips it and uploads the zip as an artifact
-   - **verify** (macOS 14 and macOS 15, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip.
+   - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip.
    - **publish** (Linux, write token):
      - creates the GitHub Release (a pre-release when unsigned)
      - opens a `[Chore] Update Homebrew cask to <version>` PR
@@ -29,6 +29,8 @@ Releases are built entirely by `.github/workflows/release.yml`. Nothing is built
    ```bash
    brew update && brew upgrade --cask strata-inspector
    ```
+
+macOS 14 is the deployment target, but GitHub retired its macOS 14 runner image on 2 November 2026, so releases aren't tested on 14 in CI. Check a release on a macOS 14 machine by hand if you need that guarantee.
 
 ## Dry runs
 
