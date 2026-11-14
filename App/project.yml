@@ -1,0 +1,93 @@
+name: Strata
+
+options:
+  bundleIdPrefix: com.dillankerai
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+settings:
+  base:
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+  configs:
+    Release:
+      ENABLE_HARDENED_RUNTIME: YES
+
+packages:
+  StrataCore:
+    path: ../Packages/StrataCore
+
+targets:
+  Strata:
+    type: application
+    platform: macOS
+    sources:
+      - path: Strata
+    dependencies:
+      - package: StrataCore
+    info:
+      path: Strata/Info.plist
+      properties:
+        CFBundleDisplayName: Strata
+        CFBundleName: Strata
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.developer-tools
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: "Copyright © 2026 Dillan. MIT licence."
+        NSPrincipalClass: NSApplication
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dillankerai.strata
+        PRODUCT_NAME: Strata
+        ENABLE_APP_SANDBOX: NO
+
+  StrataTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: StrataTests
+    dependencies:
+      - target: Strata
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dillankerai.strata.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+  StrataUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: StrataUITests
+    dependencies:
+      - target: Strata
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dillankerai.strata.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Strata
+
+schemes:
+  Strata:
+    build:
+      targets:
+        Strata: all
+    test:
+      config: Debug
+      gatherCoverageData: true
+      coverageTargets:
+        - Strata
+      targets:
+        - StrataTests
+        - StrataUITests
+    archive:
+      config: Release
