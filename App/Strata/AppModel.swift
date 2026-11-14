@@ -12,6 +12,7 @@ final class AppModel {
 
     var selectedRepositoryID: Repository.ID?
     var category: Category = .all
+    var query = ItemQuery()
     var selectedItemID: ConfigItem.ID?
     var isInspectorPresented = true
 
@@ -47,10 +48,15 @@ final class AppModel {
         scanningRepositoryIDs.contains(id)
     }
 
-    /// Items for the current category, in report order.
+    /// Items for the current category that match the search and filters, in report order.
     var visibleItems: [ConfigItem] {
-        guard category != .issues else { return [] }
-        return (selectedReport?.items ?? []).filter { category.includes($0.kind) }
+        guard category != .issues, let report = selectedReport else { return [] }
+        return query.apply(to: report.items.filter { category.includes($0.kind) }, in: report)
+    }
+
+    /// Diagnostics matching the search text.
+    var visibleDiagnostics: [Diagnostic] {
+        query.apply(to: selectedReport?.diagnostics ?? [])
     }
 
     /// Selects an item, switching category if the current one doesn't show it.

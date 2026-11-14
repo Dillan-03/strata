@@ -36,6 +36,9 @@ struct RepositoryDetailView: View {
                 .accessibilityIdentifier("categoryPicker")
             }
             ToolbarItem {
+                FilterMenu()
+            }
+            ToolbarItem {
                 Button {
                     Task { await model.scan(repository.id) }
                 } label: {
@@ -53,6 +56,7 @@ struct RepositoryDetailView: View {
                 .help(model.isInspectorPresented ? "Hide Inspector" : "Show Inspector")
             }
         }
+        .searchable(text: $model.query.text, placement: .toolbar, prompt: "Search")
         .inspector(isPresented: $model.isInspectorPresented) {
             ItemInspectorView(repository: repository)
                 .inspectorColumnWidth(min: 280, ideal: 340, max: 520)

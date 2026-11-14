@@ -7,12 +7,15 @@ struct DiagnosticsListView: View {
     let formatter: PathFormatter
 
     var body: some View {
+        let visible = model.visibleDiagnostics
         if report.diagnostics.isEmpty {
             ContentUnavailableView("No Issues", systemImage: "checkmark.seal", description: Text("Nothing in this repository's configuration needs attention."))
+        } else if visible.isEmpty {
+            ContentUnavailableView.search(text: model.query.text)
         } else {
             List {
                 ForEach(Diagnostic.Severity.allCases, id: \.self) { severity in
-                    let diagnostics = report.diagnostics.filter { $0.severity == severity }
+                    let diagnostics = visible.filter { $0.severity == severity }
                     if !diagnostics.isEmpty {
                         Section("\(severity.title) (\(diagnostics.count))") {
                             ForEach(diagnostics) { diagnostic in
