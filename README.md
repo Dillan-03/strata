@@ -17,7 +17,7 @@ Strata is read-only. It never edits Claude Code configuration, runs MCP servers,
 | --- | --- |
 | ![The issues list, led by a global skill hiding the repository's copy](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/issues.png) | ![An MCP server from .mcp.json, shown as Conditional until approved, with Strata's note that it never runs servers](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/mcp.png) |
 
-Screenshots are captured from the real app by CI on every change to `main`, using made-up configuration.
+Screenshots are captured from the real app by CI whenever the app changes on `main`, using made-up configuration.
 
 ## Requirements
 

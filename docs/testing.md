@@ -4,10 +4,25 @@
 
 | Suite | Runs on | Covers |
 | --- | --- | --- |
-| `StrataCoreTests` | Linux and macOS | Every scanner and precedence rule, against fixture folders built in a temporary directory. Includes the secret-masking guarantee (no planted credential appears anywhere in an encoded report), import cycles, malformed JSON and frontmatter, and a 5,000-item filtering speed check. |
+| `StrataCoreTests` | Linux and macOS | Every scanner and precedence rule, against fixture folders built in a temporary directory. Includes the secret-masking guarantee (no planted credential appears anywhere in an encoded report), import cycles, malformed JSON and frontmatter, files that are too large, not UTF-8 or unreadable, symlink loops, `CLAUDE_CONFIG_DIR`, and a 5,000-item filtering speed check. |
 | `StrataTests` | macOS | `AppModel`: repository persistence, moved and missing folders, scanning, filtering, and refresh batching. |
 | `StrataUITests` | macOS | End-to-end flows: launch, empty state, following an issue to the overridden item, category switching. |
 | `issue-title.test.mjs` | Node | The workflow that checks issue title prefixes. |
+
+## Measured results
+
+From the CI run on `main` at commit `f33acff` (14 November 2026), which is the v0.1.0 code:
+
+| Suite | Result |
+| --- | --- |
+| StrataCore on Linux (Swift 6) | 145 tests, 0 failures |
+| StrataCore on macOS 15 (Xcode 16) | 145 tests, 0 failures |
+| App and UI tests on macOS 15 | 31 tests: 30 passed, 1 skipped (`ScreenshotTests`, which runs only in the Screenshots workflow and passed there) |
+| StrataCore line coverage (Linux) | 93.5% (3,488 of 3,731 lines) |
+
+Release checks from the v0.1.0 dry run (PR #43) passed on macOS 15.8.2 and macOS 26.7.2: checksum, `codesign --verify --strict`, launch, and the Homebrew round trip. Each CI run posts its own counts and coverage as check annotations, so later numbers are always on the commit's checks.
+
+Coverage is lowest in `ConfigItem`, `InspectionReport` and `Diagnostic` (62–67%). Most of the uncovered lines are display titles and convenience accessors that the app tests exercise but Linux coverage doesn't count. The app target's coverage isn't measured.
 
 ## Running locally
 
