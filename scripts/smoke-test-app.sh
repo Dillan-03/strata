@@ -19,4 +19,4 @@ if ! kill -0 "$pid" 2>/dev/null; then
 fi
 kill "$pid"
 wait "$pid" 2>/dev/null || true
-echo "Strata launched and stayed running."
+echo "::notice title=Smoke test::$(basename "$app") from $(dirname "$app") launched and stayed running for 6 seconds."

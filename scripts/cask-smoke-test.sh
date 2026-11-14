@@ -89,4 +89,4 @@ assert_config_untouched zap
 brew untrust --cask "$tap/strata-inspector" >/dev/null
 brew untap "$tap" >/dev/null
 rm -rf "$sentinel_dir" "$HOME/.strata-smoke-claude.json"
-echo "Homebrew install, launch, uninstall, reinstall and zap all passed; user configuration untouched."
+echo "::notice title=Homebrew round trip::brew style, brew audit --strict, install, launch, uninstall, reinstall and zap passed. ~/.claude was unchanged after every step."

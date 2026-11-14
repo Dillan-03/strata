@@ -22,4 +22,4 @@ ditto -c -k --sequesterRsrc --keepParent "$app" "$archive"
 (cd "$dist" && shasum -a 256 "$(basename "$archive")" > "$(basename "$archive").sha256")
 
 echo "Packaged $archive"
-cat "$archive.sha256"
+echo "::notice title=Packaged::$(cat "$archive.sha256")"
