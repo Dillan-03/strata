@@ -45,9 +45,10 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(postgres.waitForExistence(timeout: 10), "The postgres row isn't in the MCP list")
         postgres.click()
         // postgres has one definition, so the inspector shows the MCP safety note rather than "Which Copy Runs".
-        // macOS static text can carry its string in value rather than label, so match either.
+        // macOS static text can carry its string in value rather than label, so match either. Only static text:
+        // other elements' values can be numbers, which a substring match would throw on.
         let noteText = "never runs this command"
-        let safetyNote = app.descendants(matching: .any)
+        let safetyNote = app.staticTexts
             .matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", noteText, noteText)).firstMatch
         XCTAssertTrue(safetyNote.waitForExistence(timeout: 10), "The MCP inspector didn't open")
         capture(window, as: "mcp")
