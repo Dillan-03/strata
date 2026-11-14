@@ -18,6 +18,12 @@ final class AppModel {
 
     let environment: ScanEnvironment
     private let store: RepositoryStore
+    @ObservationIgnored private var folderWatcher: FolderWatcher?
+    @ObservationIgnored private var fileWatcher: FileWatcher?
+    @ObservationIgnored private lazy var scheduler = RefreshScheduler { [weak self] batch in
+        guard let self else { return }
+        Task { await self.refresh(batch) }
+    }
 
     init(store: RepositoryStore, environment: ScanEnvironment = .current()) {
         self.store = store
@@ -100,6 +106,49 @@ final class AppModel {
         reports[id] = report
         if let selectedItemID, report.item(withID: selectedItemID) == nil, selectedRepositoryID == id {
             self.selectedItemID = nil
+        }
+    }
+
+    // MARK: - Automatic refresh
+
+    /// Starts or stops watching the repositories and global configuration. Call again when the repository list changes.
+    func configureWatching(enabled: Bool) {
+        folderWatcher?.stop()
+        fileWatcher?.stop()
+        folderWatcher = nil
+        fileWatcher = nil
+        scheduler.cancel()
+        guard enabled else { return }
+
+        let available = repositories.filter { !missingRepositoryIDs.contains($0.id) }.map(\.url.path)
+        let relevance = ChangeRelevance(environment: environment, repositoryPaths: available)
+        var paths = available + [environment.claudeDirectory.path]
+        if let managed = environment.managedDirectory, FileManager.default.fileExists(atPath: managed.path) {
+            paths.append(managed.path)
+        }
+        let watcher = FolderWatcher(paths: paths) { [weak self] changed in
+            let affected = changed.map(relevance.classify)
+            Task { @MainActor [weak self] in
+                affected.forEach { self?.scheduler.enqueue($0) }
+            }
+        }
+        let globalFile = FileWatcher(url: environment.globalConfigFile) { [weak self] in
+            Task { @MainActor [weak self] in self?.scheduler.enqueue(.global) }
+        }
+        watcher.start()
+        globalFile.start()
+        folderWatcher = watcher
+        fileWatcher = globalFile
+    }
+
+    /// Rescans what a batch of changes affects: every scanned repository for global changes, otherwise only those repositories.
+    func refresh(_ batch: RefreshScheduler.Batch) async {
+        let targets = repositories.filter { repository in
+            guard reports[repository.id] != nil else { return false }
+            return batch.global || batch.repositoryPaths.contains(repository.url.standardizedFileURL.path)
+        }
+        for repository in targets {
+            await scan(repository.id)
         }
     }
 
