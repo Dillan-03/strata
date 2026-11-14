@@ -48,5 +48,9 @@ struct StrataApp: App {
                 }
             }
         }
+
+        Settings {
+            SettingsView()
+        }
     }
 }

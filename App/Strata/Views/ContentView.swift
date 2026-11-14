@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppModel.self) private var model
+    @AppStorage(PreferenceKey.autoRefresh) private var autoRefresh = true
 
     var body: some View {
         NavigationSplitView {
@@ -21,6 +22,15 @@ struct ContentView: View {
         }
         .onChange(of: model.selectedRepositoryID) {
             model.selectedItemID = nil
+        }
+        .onChange(of: model.repositories) {
+            model.configureWatching(enabled: autoRefresh)
+        }
+        .onChange(of: autoRefresh) {
+            model.configureWatching(enabled: autoRefresh)
+        }
+        .onAppear {
+            model.configureWatching(enabled: autoRefresh)
         }
     }
 }
