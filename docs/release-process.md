@@ -14,11 +14,12 @@ Releases are built entirely by `.github/workflows/release.yml`. Nothing is built
    ```
 
 3. The workflow runs:
-   - **build** (macOS, read-only token):
+   - **build** (macOS 15, read-only token):
      - checks the tag points at a commit on `main` and matches `MARKETING_VERSION`
      - runs core and app unit tests
      - builds a universal Release app, signs and notarises it (or ad-hoc signs it)
-     - zips it, smoke-tests the zipped app, runs the Homebrew round trip, and uploads the zip as an artifact
+     - zips it and uploads the zip as an artifact
+   - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip.
    - **publish** (Linux, write token):
      - creates the GitHub Release (a pre-release when unsigned)
      - opens a `[Chore] Update Homebrew cask to <version>` PR
@@ -29,9 +30,11 @@ Releases are built entirely by `.github/workflows/release.yml`. Nothing is built
    brew update && brew upgrade --cask strata-inspector
    ```
 
+macOS 14 is the deployment target, but GitHub retired its macOS 14 runner image on 2 November 2026, so releases aren't tested on 14 in CI. Check a release on a macOS 14 machine by hand if you need that guarantee.
+
 ## Dry runs
 
-- Any pull request that touches `scripts/`, `packaging/` or the release workflow runs the build job without publishing.
+- Any pull request that touches `scripts/`, `packaging/` or the release workflow runs the build and verify jobs without publishing.
 - **Actions → Release → Run workflow** with `publish` unchecked does the same for any branch. The zip is kept as a workflow artifact for 30 days.
 
 With `publish` checked, a manual run publishes the existing tag `v<version>`. It refuses to run unless that tag points at the commit being built.

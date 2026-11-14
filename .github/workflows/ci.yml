@@ -67,9 +67,10 @@ jobs:
       - name: Test
         run: |
           set -o pipefail
-          swift test --package-path Packages/StrataCore 2>&1 | tee core-tests.log
+          swift test --package-path Packages/StrataCore --enable-code-coverage 2>&1 | tee core-tests.log
           summary=$(grep -E "Executed [0-9]+ tests" core-tests.log | tail -1 | sed -E 's/^[[:space:]]+//')
           echo "::notice title=StrataCore tests (Linux)::${summary}"
+          python3 .github/scripts/coverage.py "$(swift test --package-path Packages/StrataCore --show-codecov-path)"
 
   app:
     name: App (macOS)
