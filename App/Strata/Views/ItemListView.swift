@@ -1,0 +1,97 @@
+import StrataCore
+import SwiftUI
+
+struct ItemListView: View {
+    @Environment(AppModel.self) private var model
+    let report: InspectionReport
+    let formatter: PathFormatter
+
+    var body: some View {
+        @Bindable var model = model
+        let groups = Self.groups(model.visibleItems)
+        if groups.isEmpty {
+            ContentUnavailableView {
+                Label("Nothing Here", systemImage: "tray")
+            } description: {
+                Text(report.hasRepositoryConfiguration || !report.items.isEmpty
+                    ? "No \(model.category.title.lowercased()) apply to this repository."
+                    : "This repository has no Claude Code configuration, and nothing global was found.")
+            }
+        } else {
+            List(selection: $model.selectedItemID) {
+                ForEach(groups) { group in
+                    Section {
+                        ForEach(group.items) { item in
+                            ItemRow(item: item, formatter: formatter)
+                                .tag(item.id)
+                        }
+                    } header: {
+                        Text("\(group.kind.pluralTitle) (\(group.items.count))")
+                    }
+                }
+            }
+            .listStyle(.inset)
+            .alternatingRowBackgrounds()
+            .accessibilityIdentifier("itemList")
+        }
+    }
+
+    struct Group: Identifiable {
+        let kind: ItemKind
+        let items: [ConfigItem]
+        var id: ItemKind { kind }
+    }
+
+    static func groups(_ items: [ConfigItem]) -> [Group] {
+        ItemKind.allCases.compactMap { kind in
+            let matching = items.filter { $0.kind == kind }
+            return matching.isEmpty ? nil : Group(kind: kind, items: matching)
+        }
+    }
+}
+
+struct ItemRow: View {
+    let item: ConfigItem
+    let formatter: PathFormatter
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.invocation ?? item.name)
+                    .font(item.kind == .instruction ? .body : .body.monospaced())
+                    .strikethrough(isStruckThrough)
+                    .foregroundStyle(item.applicability.isApplied || item.applicability == .conditional ? .primary : .secondary)
+                if let summary = item.summary {
+                    Text(summary)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(item.scope.title)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .frame(width: 90, alignment: .leading)
+
+            Text(formatter.display(item.source.path))
+                .font(.callout.monospaced())
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(width: 240, alignment: .leading)
+
+            StatusBadge(applicability: item.applicability)
+                .frame(width: 150, alignment: .leading)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.invocation ?? item.name), \(item.kind.title), \(item.scope.title), \(item.applicability.title)")
+    }
+
+    private var isStruckThrough: Bool {
+        if case .shadowed = item.applicability { return true }
+        return false
+    }
+}
