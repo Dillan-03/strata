@@ -23,7 +23,7 @@ Thanks for helping. Strata is a small, read-only macOS tool, and the bar for cha
 See [docs/development.md](docs/development.md). In short:
 
 ```bash
-swift test                      # StrataCore engine, works on macOS and Linux
+swift test --package-path Packages/StrataCore   # rules engine, works on macOS and Linux
 brew install xcodegen
 cd App && xcodegen generate     # creates Strata.xcodeproj
 open Strata.xcodeproj
