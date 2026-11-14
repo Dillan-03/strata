@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  XCODEGEN_VERSION: "2.46.0"
+  XCODEGEN_SHA256: "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
+  SWIFTLINT_IMAGE: "ghcr.io/realm/swiftlint:0.65.1"
+  ACTIONLINT_VERSION: "1.7.12"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL "https://raw.githubusercontent.com/rhysd/actionlint/v${ACTIONLINT_VERSION}/scripts/download-actionlint.bash") "${ACTIONLINT_VERSION}"
+          ./actionlint -color
+
+      - name: SwiftLint
+        run: docker run --rm -v "$PWD:/work" -w /work "$SWIFTLINT_IMAGE" swiftlint lint --strict --reporter github-actions-logging
+
+      - name: Issue-title check tests
+        run: node --test .github/scripts/issue-title.test.mjs
+
+  core:
+    name: Core (Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain
+        run: swift --version
+
+      - name: No third-party dependencies
+        run: |
+          swift package --package-path Packages/StrataCore show-dependencies --format json > deps.json
+          python3 -c "import json,sys; d=json.load(open('deps.json')); sys.exit('Unexpected dependencies: ' + ', '.join(x['name'] for x in d['dependencies'])) if d['dependencies'] else print('No dependencies')"
+
+      - name: Build
+        run: swift build --package-path Packages/StrataCore -Xswiftc -warnings-as-errors
+
+      - name: Test
+        run: swift test --package-path Packages/StrataCore --parallel
+
+  app:
+    name: App (macOS)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: |
+          latest=$(find /Applications -maxdepth 1 -name 'Xcode_16*.app' | sort -V | tail -1)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o xcodegen.zip "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  xcodegen.zip" | shasum -a 256 -c -
+          unzip -q xcodegen.zip -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+
+      - name: Generate project
+        working-directory: App
+        run: xcodegen generate
+
+      - name: StrataCore tests (macOS)
+        run: swift test --package-path Packages/StrataCore
+
+      - name: Build and test app
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project App/Strata.xcodeproj \
+            -scheme Strata \
+            -destination 'platform=macOS' \
+            -resultBundlePath build/TestResults.xcresult \
+            -quiet
+
+      - name: Static analysis
+        run: |
+          set -o pipefail
+          xcodebuild analyze \
+            -project App/Strata.xcodeproj \
+            -scheme Strata \
+            -destination 'platform=macOS' \
+            -quiet
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: TestResults
+          path: build/TestResults.xcresult
+          if-no-files-found: ignore
+          retention-days: 14
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
