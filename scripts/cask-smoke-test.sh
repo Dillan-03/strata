@@ -48,7 +48,11 @@ tap_dir="$(brew --repository "$tap")"
 mkdir -p "$tap_dir/Casks"
 cask_file="$tap_dir/Casks/strata-inspector.rb"
 # Homebrew 6+ won't load casks from an untrusted tap. Trust only this cask, as a fully qualified install would.
-reported "brew trust" brew trust --cask "$tap/strata-inspector"
+has_tap_trust=false
+if brew trust --help >/dev/null 2>&1; then
+  has_tap_trust=true
+  reported "brew trust" brew trust --cask "$tap/strata-inspector"
+fi
 
 echo "== audit (cask as published)"
 "$root/scripts/render-cask.sh" "$version" "$sha" > "$cask_file"
@@ -86,7 +90,7 @@ for leftover in "$HOME/Library/Preferences/com.dillankerai.strata.plist" "$HOME/
 done
 assert_config_untouched zap
 
-brew untrust --cask "$tap/strata-inspector" >/dev/null
+if [ "$has_tap_trust" = true ]; then brew untrust --cask "$tap/strata-inspector" >/dev/null; fi
 brew untap "$tap" >/dev/null
 rm -rf "$sentinel_dir" "$HOME/.strata-smoke-claude.json"
-echo "::notice title=Homebrew round trip::brew style, brew audit --strict, install, launch, uninstall, reinstall and zap passed. ~/.claude was unchanged after every step."
+echo "::notice title=Homebrew round trip (macOS $(sw_vers -productVersion), $(brew --version | head -1))::brew style, brew audit --strict, install, launch, uninstall, reinstall and zap passed. ~/.claude was unchanged after every step."

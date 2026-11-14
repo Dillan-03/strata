@@ -33,12 +33,16 @@ public struct ScanEnvironment: Sendable {
 
     /// The environment of the current user on this machine.
     public static func current(processInfo: ProcessInfo = .processInfo) -> ScanEnvironment {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let environment = processInfo.environment
+        current(environment: processInfo.environment, home: FileManager.default.homeDirectoryForCurrentUser)
+    }
+
+    /// The locations implied by a set of environment variables and a home folder.
+    public static func current(environment: [String: String], home: URL) -> ScanEnvironment {
         var claudeDirectory: URL?
         var globalConfigFile: URL?
         if let override = environment["CLAUDE_CONFIG_DIR"], !override.isEmpty {
-            let url = URL(fileURLWithPath: (override as NSString).expandingTildeInPath, isDirectory: true)
+            let expanded = override == "~" ? home.path : override.hasPrefix("~/") ? home.path + override.dropFirst() : override
+            let url = URL(fileURLWithPath: expanded, isDirectory: true)
             claudeDirectory = url
             globalConfigFile = url.appendingPathComponent(".claude.json")
         }

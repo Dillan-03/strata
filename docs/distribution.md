@@ -59,7 +59,7 @@ spctl --assess --type execute --verbose /Applications/Strata.app   # signed buil
 
 ## What the pipeline verifies
 
-`scripts/cask-smoke-test.sh` runs on every release, and on any pull request that changes packaging. It:
+`scripts/cask-smoke-test.sh` runs on macOS 14 and macOS 15 for every release, and on any pull request that changes packaging. It:
 
 1. Renders the cask against the freshly built zip and runs `brew style` on it.
 2. Installs it, launches the app, uninstalls, reinstalls, then zaps.

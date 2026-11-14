@@ -31,7 +31,7 @@ env:
 
 jobs:
   build:
-    name: Build, sign and verify install
+    name: Build and sign
     runs-on: macos-15
     timeout-minutes: 75
     outputs:
@@ -129,17 +129,6 @@ jobs:
           scripts/package-release.sh "${{ steps.version.outputs.version }}"
           cp build/Release/signing-status dist/signing-status
 
-      - name: Smoke test packaged app
-        id: smoke
-        run: |
-          rm -rf "$RUNNER_TEMP/smoke" && mkdir -p "$RUNNER_TEMP/smoke"
-          ditto -x -k "dist/Strata-${{ steps.version.outputs.version }}.zip" "$RUNNER_TEMP/smoke"
-          scripts/smoke-test-app.sh "$RUNNER_TEMP/smoke/Strata.app"
-
-      - name: Homebrew install, uninstall, reinstall and zap
-        id: homebrew
-        run: scripts/cask-smoke-test.sh "${{ steps.version.outputs.version }}" "dist/Strata-${{ steps.version.outputs.version }}.zip"
-
       - name: Upload artifacts
         id: upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -162,9 +151,49 @@ jobs:
                   print(f"::error title=Release step failed::{name}")
           '
 
+  verify:
+    name: Verify install (${{ matrix.os }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        # macOS 14 is the minimum the app supports; the build itself runs on 15.
+        os: [macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: dist
+
+      - name: Checksum and signature
+        run: |
+          (cd dist && shasum -a 256 -c "Strata-$VERSION.zip.sha256")
+          rm -rf "$RUNNER_TEMP/app" && mkdir -p "$RUNNER_TEMP/app"
+          ditto -x -k "dist/Strata-$VERSION.zip" "$RUNNER_TEMP/app"
+          codesign --verify --deep --strict "$RUNNER_TEMP/app/Strata.app"
+          if [ "$(cat dist/signing-status)" = "signed" ]; then
+            spctl --assess --type execute "$RUNNER_TEMP/app/Strata.app"
+            echo "::notice title=Gatekeeper ($(sw_vers -productVersion))::Signed and notarised build accepted"
+          fi
+          echo "::notice title=Verified on macOS $(sw_vers -productVersion)::Checksum matches; codesign --verify --strict passed ($(cat dist/signing-status) build)"
+
+      - name: Launch
+        run: scripts/smoke-test-app.sh "$RUNNER_TEMP/app/Strata.app"
+
+      - name: Homebrew install, uninstall, reinstall and zap
+        run: scripts/cask-smoke-test.sh "$VERSION" "dist/Strata-$VERSION.zip"
+
   publish:
     name: Publish release
-    needs: build
+    needs: [build, verify]
     if: needs.build.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
