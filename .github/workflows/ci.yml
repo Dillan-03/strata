@@ -62,7 +62,11 @@ jobs:
         run: swift build --package-path Packages/StrataCore -Xswiftc -warnings-as-errors
 
       - name: Test
-        run: swift test --package-path Packages/StrataCore --parallel
+        run: |
+          set -o pipefail
+          swift test --package-path Packages/StrataCore 2>&1 | tee core-tests.log
+          summary=$(grep -E "Executed [0-9]+ tests" core-tests.log | tail -1 | sed -E 's/^[[:space:]]+//')
+          echo "::notice title=StrataCore tests (Linux)::${summary}"
 
   app:
     name: App (macOS)
@@ -91,7 +95,11 @@ jobs:
         run: xcodegen generate
 
       - name: StrataCore tests (macOS)
-        run: swift test --package-path Packages/StrataCore
+        run: |
+          set -o pipefail
+          swift test --package-path Packages/StrataCore 2>&1 | tee core-tests.log
+          summary=$(grep -E "Executed [0-9]+ tests" core-tests.log | tail -1 | sed -E 's/^[[:space:]]+//')
+          echo "::notice title=StrataCore tests (macOS)::${summary}"
 
       - name: Build and test app
         run: |
@@ -102,6 +110,18 @@ jobs:
             -destination 'platform=macOS' \
             -resultBundlePath build/TestResults.xcresult \
             -quiet
+
+      - name: Report app test counts
+        if: always()
+        run: |
+          if [ -d build/TestResults.xcresult ]; then
+            xcrun xcresulttool get test-results summary --path build/TestResults.xcresult --compact > summary.json || exit 0
+            python3 - <<'PY'
+          import json
+          s = json.load(open("summary.json"))
+          print(f"::notice title=App tests::result={s.get('result')} total={s.get('totalTestCount')} passed={s.get('passedTests')} failed={s.get('failedTests')} skipped={s.get('skippedTests')}")
+          PY
+          fi
 
       - name: Static analysis
         run: |
