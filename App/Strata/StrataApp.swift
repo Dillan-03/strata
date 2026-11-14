@@ -26,6 +26,7 @@ struct StrataApp: App {
                 .environment(model)
                 .frame(minWidth: 960, minHeight: 600)
         }
+        .defaultSize(width: 1280, height: 800)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Add Repository…") {

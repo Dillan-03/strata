@@ -4,11 +4,13 @@ import SwiftUI
 /// The status of an item, as an icon plus words so it never relies on colour alone.
 struct StatusBadge: View {
     let applicability: Applicability
+    /// `.increased` on a selected row, where accent colours lose contrast against the selection.
+    @Environment(\.backgroundProminence) private var backgroundProminence
 
     var body: some View {
         Label(applicability.title, systemImage: symbol)
             .labelStyle(.titleAndIcon)
-            .foregroundStyle(style)
+            .foregroundStyle(backgroundProminence == .increased ? AnyShapeStyle(.primary) : style)
             .font(.callout)
             .lineLimit(1)
     }

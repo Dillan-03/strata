@@ -114,6 +114,14 @@ final class InspectionModelTests: XCTestCase {
         XCTAssertEqual(formatter.display("/Users/dev/code/demo"), ".")
     }
 
+    func testSubtitlePathAbbreviatesOnlyTheHomeFolder() {
+        let formatter = PathFormatter(repositoryPath: "/Users/dev/code/demo", homePath: "/Users/dev")
+        XCTAssertEqual(formatter.abbreviatingHome("/Users/dev/code/demo"), "~/code/demo")
+        XCTAssertEqual(formatter.abbreviatingHome("/Users/dev"), "~")
+        XCTAssertEqual(formatter.abbreviatingHome("/Users/devops/code"), "/Users/devops/code")
+        XCTAssertEqual(formatter.abbreviatingHome("/Volumes/Work/demo"), "/Volumes/Work/demo")
+    }
+
     func testCategoryShortcutsFollowPickerOrder() {
         XCTAssertEqual(Category.allCases.map(\.shortcut.character), ["1", "2", "3", "4", "5", "6", "7", "8"])
     }

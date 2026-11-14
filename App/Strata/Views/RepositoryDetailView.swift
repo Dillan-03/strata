@@ -23,7 +23,7 @@ struct RepositoryDetailView: View {
             }
         }
         .navigationTitle(repository.displayName)
-        .navigationSubtitle(repository.url.path)
+        .navigationSubtitle(model.pathFormatter(for: repository).abbreviatingHome(repository.url.standardizedFileURL.path))
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Picker("Category", selection: $model.category) {
@@ -77,34 +77,49 @@ private struct SummaryBar: View {
     var body: some View {
         let issues = report.diagnostics.filter { $0.severity != .info }
         let applied = report.items.filter { $0.applicability.isApplied }.count
-        HStack(spacing: 12) {
-            if issues.isEmpty {
-                Label("No issues", systemImage: "checkmark.seal")
-                    .foregroundStyle(.secondary)
-            } else {
-                Button {
-                    model.category = .issues
-                } label: {
-                    Label("\(issues.count) item\(issues.count == 1 ? " needs" : "s need") attention", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                issueStatus(issues.count)
+                Text("\(applied) apply to this repository").foregroundStyle(.secondary)
+                Spacer(minLength: 12)
+                ForEach(countedKinds) { entry in
+                    Text("\(entry.kind.pluralTitle) \(entry.count)")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.borderless)
-                .accessibilityIdentifier("issuesSummary")
             }
-            Text("\(applied) apply to this repository")
-                .foregroundStyle(.secondary)
-            Spacer()
-            ForEach(countedKinds) { entry in
-                Text("\(entry.kind.pluralTitle) \(entry.count)")
-                    .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                issueStatus(issues.count)
+                Text("\(applied) apply").foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            }
+            HStack {
+                issueStatus(issues.count)
+                Spacer(minLength: 0)
             }
         }
+        .lineLimit(1)
         .font(.callout)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(.bar)
         .overlay(alignment: .bottom) { Divider() }
+    }
+
+    @ViewBuilder private func issueStatus(_ count: Int) -> some View {
+        if count == 0 {
+            Label("No issues", systemImage: "checkmark.seal")
+                .foregroundStyle(.secondary)
+        } else {
+            Button {
+                model.category = .issues
+            } label: {
+                Label("\(count) item\(count == 1 ? " needs" : "s need") attention", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityIdentifier("issuesSummary")
+        }
     }
 
     private struct KindCount: Identifiable {

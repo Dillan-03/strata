@@ -10,7 +10,9 @@ on:
       - "Packages/**"
       - ".github/workflows/screenshots.yml"
   pull_request:
+    # UI changes publish preview screenshots so the result can be seen before merging.
     paths:
+      - "App/Strata/**"
       - "App/StrataUITests/ScreenshotTests.swift"
       - ".github/workflows/screenshots.yml"
   workflow_dispatch:

@@ -50,26 +50,38 @@ struct DiagnosticRow: View {
                     Text(suggestion)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                HStack(spacing: 8) {
-                    ForEach(diagnostic.itemIDs, id: \.self) { itemID in
-                        if let item = report.item(withID: itemID) {
-                            Button("Show \(item.invocation ?? item.name) (\(item.scope.title))") {
-                                model.reveal(itemID)
-                            }
-                            .buttonStyle(.link)
-                            .accessibilityIdentifier("showItem.\(item.scope.rawValue).\(item.name)")
-                        }
-                    }
-                    ForEach(diagnostic.paths.prefix(2), id: \.self) { path in
-                        Button("Reveal \(formatter.display(path))") {
-                            model.revealInFinder(URL(fileURLWithPath: path))
-                        }
-                        .buttonStyle(.link)
-                    }
+                // One line when the links fit, one per line when they don't, never wrapped mid-label.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) { links }
+                    VStack(alignment: .leading, spacing: 4) { links }
                 }
                 .font(.callout)
             }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Items open in the inspector, which can also reveal their files. Issues about a file with no item,
+    /// such as malformed JSON, get Finder links instead.
+    @ViewBuilder private var links: some View {
+        let items = diagnostic.itemIDs.compactMap { report.item(withID: $0) }
+        ForEach(items) { item in
+            Button("Show \(item.invocation ?? item.name) (\(item.scope.title))") {
+                model.reveal(item.id)
+            }
+            .buttonStyle(.link)
+            .fixedSize()
+            .accessibilityIdentifier("showItem.\(item.scope.rawValue).\(item.name)")
+        }
+        if items.isEmpty {
+            ForEach(diagnostic.paths.prefix(2), id: \.self) { path in
+                Button("Reveal \(URL(fileURLWithPath: path).lastPathComponent) in Finder") {
+                    model.revealInFinder(URL(fileURLWithPath: path))
+                }
+                .buttonStyle(.link)
+                .fixedSize()
+                .help(formatter.display(path))
+            }
+        }
     }
 }

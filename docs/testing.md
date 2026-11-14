@@ -46,7 +46,7 @@ Tests build their fixtures in code with the helpers in `Tests/StrataCoreTests/Su
 
 ## Screenshots
 
-`ScreenshotTests` is a UI test that is skipped unless `STRATA_SCREENSHOTS=1` is set. The Screenshots workflow sets it, captures the window against a made-up configuration, and force-pushes the images to the `screenshots` branch, which the README embeds. Pull requests that change the capture publish to `screenshots-preview` instead, so the result can be checked before merging.
+`ScreenshotTests` is a UI test that is skipped unless `STRATA_SCREENSHOTS=1` is set. The Screenshots workflow sets it, captures the window against a made-up configuration, and force-pushes the images to the `screenshots` branch, which the README embeds. Pull requests that change the app's UI or the capture publish to `screenshots-preview` instead, so the result can be checked before merging.
 
 ## What tests can't prove
 
