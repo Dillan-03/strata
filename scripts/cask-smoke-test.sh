@@ -51,8 +51,8 @@ cask_file="$tap_dir/Casks/strata-inspector.rb"
 echo "== audit (cask as published)"
 "$root/scripts/render-cask.sh" "$version" "$sha" > "$cask_file"
 reported "brew style" brew style --cask "$tap/strata-inspector"
-# Offline: the release URL doesn't exist yet. Signing is checked separately by sign-and-notarize.sh.
-reported "brew audit" brew audit --cask --strict --no-signing "$tap/strata-inspector"
+# Offline (no --online): the release URL doesn't exist yet. Signing is checked by sign-and-notarize.sh.
+reported "brew audit" brew audit --cask --strict "$tap/strata-inspector"
 
 "$root/scripts/render-cask.sh" "$version" "$sha" "file://$zip" > "$cask_file"
 
