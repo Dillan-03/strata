@@ -76,7 +76,7 @@ final class InspectorTests: XCTestCase {
         ]])
         try fixture.json(".claude/settings.json", in: fixture.home, ["env": ["GITHUB_TOKEN": secrets[0]], "apiKey": secrets[1]])
 
-        let encoded = String(decoding: try JSONEncoder().encode(fixture.inspect()), as: UTF8.self)
+        let encoded = try XCTUnwrap(String(bytes: try JSONEncoder().encode(fixture.inspect()), encoding: .utf8))
         for secret in secrets {
             XCTAssertFalse(encoded.contains(secret), "Report leaked a secret")
         }

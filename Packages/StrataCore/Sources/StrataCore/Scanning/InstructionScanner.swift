@@ -82,7 +82,8 @@ struct InstructionScanner {
 
             items.append(item)
             if item.inactiveReason == nil, let body = document?.body {
-                items += imports(in: body, of: candidate.url, parent: item, hop: 1, order: &order, chain: [context.reader.canonical(candidate.url).path], seen: &importedPaths)
+                let step = ImportStep(file: candidate.url, parent: item, hop: 1, chain: [context.reader.canonical(candidate.url).path])
+                items += imports(in: body, step: step, order: &order, seen: &importedPaths)
             }
         }
         return items
@@ -270,15 +271,16 @@ struct InstructionScanner {
 
     // MARK: - Imports
 
-    private func imports(
-        in body: String,
-        of file: URL,
-        parent: ConfigItem,
-        hop: Int,
-        order: inout Int,
-        chain: [String],
-        seen: inout Set<String>
-    ) -> [ConfigItem] {
+    /// Where an import walk is: the importing file, its item, how many hops deep, and the files already on this chain.
+    private struct ImportStep {
+        let file: URL
+        let parent: ConfigItem
+        let hop: Int
+        let chain: [String]
+    }
+
+    private func imports(in body: String, step: ImportStep, order: inout Int, seen: inout Set<String>) -> [ConfigItem] {
+        let (file, parent, hop, chain) = (step.file, step.parent, step.hop, step.chain)
         var results: [ConfigItem] = []
         for path in ImportParser.imports(in: body) {
             let target = ImportParser.resolve(path, from: file, home: context.environment.homeDirectory)
@@ -330,7 +332,8 @@ struct InstructionScanner {
 
             let externalScopes: Set<Scope> = [.project, .local, .nested, .ancestor]
             if externalScopes.contains(parent.scope), !context.isInsideRepository(target) {
-                item.condition = "This import points outside the repository. Claude Code asks you to approve external imports the first time it sees them, and skips them if you decline."
+                item.condition = "This import points outside the repository. "
+                    + "Claude Code asks you to approve external imports the first time it sees them, and skips them if you decline."
                 context.report(Diagnostic(
                     severity: .info,
                     code: .externalImport,
@@ -344,7 +347,8 @@ struct InstructionScanner {
             }
             results.append(item)
             if let body = document?.body {
-                results += imports(in: body, of: target, parent: item, hop: hop + 1, order: &order, chain: chain + [canonical], seen: &seen)
+                let next = ImportStep(file: target, parent: item, hop: hop + 1, chain: chain + [canonical])
+                results += imports(in: body, step: next, order: &order, seen: &seen)
             }
         }
         return results

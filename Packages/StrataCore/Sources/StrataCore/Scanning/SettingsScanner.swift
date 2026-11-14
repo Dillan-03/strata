@@ -18,19 +18,27 @@ struct SettingsLayer {
 struct SettingsScanner {
     let context: ScanContext
 
+    private struct Location {
+        let scope: Scope
+        let label: String
+        let url: URL
+        let precedence: Int
+    }
+
     /// Settings files that exist and parse, highest precedence first.
     func layers() -> [SettingsLayer] {
-        var candidates: [(Scope, String, URL, Int)] = []
+        var locations: [Location] = []
         if let managed = context.managedDirectory {
-            candidates.append((.managed, "Managed settings", managed.appendingPathComponent("managed-settings.json"), 1))
+            locations.append(Location(scope: .managed, label: "Managed settings", url: managed.appendingPathComponent("managed-settings.json"), precedence: 1))
         }
-        candidates.append((.local, "Project local settings", context.repositoryClaudeDirectory.appendingPathComponent("settings.local.json"), 3))
-        candidates.append((.project, "Shared project settings", context.repositoryClaudeDirectory.appendingPathComponent("settings.json"), 4))
-        candidates.append((.user, "User settings", context.claudeDirectory.appendingPathComponent("settings.json"), 5))
+        let project = context.repositoryClaudeDirectory
+        locations.append(Location(scope: .local, label: "Project local settings", url: project.appendingPathComponent("settings.local.json"), precedence: 3))
+        locations.append(Location(scope: .project, label: "Shared project settings", url: project.appendingPathComponent("settings.json"), precedence: 4))
+        locations.append(Location(scope: .user, label: "User settings", url: context.claudeDirectory.appendingPathComponent("settings.json"), precedence: 5))
 
-        return candidates.compactMap { scope, label, url, precedence in
-            guard let values = context.readJSON(url, label: label) else { return nil }
-            return SettingsLayer(scope: scope, label: label, url: url, values: values, precedence: precedence)
+        return locations.compactMap { location in
+            guard let values = context.readJSON(location.url, label: location.label) else { return nil }
+            return SettingsLayer(scope: location.scope, label: location.label, url: location.url, values: values, precedence: location.precedence)
         }
     }
 

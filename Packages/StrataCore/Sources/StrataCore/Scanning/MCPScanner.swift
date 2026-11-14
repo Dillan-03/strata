@@ -198,6 +198,9 @@ struct MCPScanner {
 
     private func applyProjectApproval(to item: inout ConfigItem, projectEntry: [String: Any]?) {
         let name = item.name
+        let approves = { (layer: SettingsLayer) in
+            (layer.strings("enabledMcpjsonServers") ?? []).contains(name) || layer.bool("enableAllProjectMcpServers") == true
+        }
         let personal = layers.filter { $0.scope != .project }
         if let rejecting = layers.first(where: { ($0.strings("disabledMcpjsonServers") ?? []).contains(name) }) {
             item.inactiveReason = "Rejected by `disabledMcpjsonServers` in \(rejecting.label)."
@@ -207,7 +210,7 @@ struct MCPScanner {
             item.inactiveReason = "You rejected it for this project (recorded in ~/.claude.json)."
             return
         }
-        if let approving = personal.first(where: { ($0.strings("enabledMcpjsonServers") ?? []).contains(name) || $0.bool("enableAllProjectMcpServers") == true }) {
+        if let approving = personal.first(where: approves) {
             item.metadata.append(Metadatum("Approval", "Approved in \(approving.label)"))
             return
         }
@@ -216,7 +219,7 @@ struct MCPScanner {
             item.metadata.append(Metadatum("Approval", "Approved for this project (recorded in ~/.claude.json)"))
             return
         }
-        if let shared = layers.first(where: { $0.scope == .project && (($0.strings("enabledMcpjsonServers") ?? []).contains(name) || $0.bool("enableAllProjectMcpServers") == true) }) {
+        if let shared = layers.first(where: { $0.scope == .project && approves($0) }) {
             item.condition = "Approved in \(shared.label), which is committed to the repository. Claude Code only honours that after you trust the workspace."
             return
         }
@@ -264,7 +267,8 @@ struct MCPScanner {
                     severity: .info,
                     code: .mcpExecutableNotOnStandardPath,
                     title: "\(definition.name): `\(expanded)` wasn't found in the usual places",
-                    detail: "Strata checked your PATH and the standard install folders. Apps launched from the Dock don't see your shell's PATH, so this may still work from a terminal.",
+                    detail: "Strata checked your PATH and the standard install folders. "
+                        + "Apps launched from the Dock don't see your shell's PATH, so this may still work from a terminal.",
                     paths: [definition.file.path],
                     itemIDs: [itemID]
                 ))

@@ -48,7 +48,7 @@ final class Fixture {
     @discardableResult
     func json(_ relativePath: String, in base: URL, _ object: Any) throws -> URL {
         let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
-        return try write(relativePath, in: base, String(decoding: data, as: UTF8.self))
+        return try write(relativePath, in: base, try XCTUnwrap(String(bytes: data, encoding: .utf8)))
     }
 
     func makeDirectory(_ relativePath: String, in base: URL) throws {
