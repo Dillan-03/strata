@@ -123,7 +123,8 @@ jobs:
 
   dependency-review:
     name: Dependency review
-    if: github.event_name == 'pull_request'
+    # Needs the repository's dependency graph. Set the DEPENDENCY_REVIEW variable to "true" once it's on (see the branch protection chore).
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

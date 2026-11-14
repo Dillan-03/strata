@@ -65,7 +65,10 @@ private struct EmptyRepositoriesView: View {
         ContentUnavailableView {
             Label("No Repositories", systemImage: "folder.badge.plus")
         } description: {
-            Text("Add a repository to see which Claude Code skills, agents, MCP servers, plugins and instructions apply to it, and where each one comes from.")
+            Text(
+                "Add a repository to see which Claude Code skills, agents, MCP servers, plugins "
+                    + "and instructions apply to it, and where each one comes from."
+            )
         } actions: {
             Button("Add Repository…") {
                 model.presentAddRepositoryPanel()
