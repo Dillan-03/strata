@@ -1,0 +1,73 @@
+name: Feature
+description: Propose new functionality for Strata.
+title: "[Feature] "
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature summary
+      description: One or two sentences on what this adds.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What is hard or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: User value
+      description: Who benefits, and how?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: A checklist that proves the feature is done.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical considerations
+      description: Architecture, Claude Code semantics to verify, performance, security.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Issues or PRs this depends on, e.g. "Depends on #4". Write "None" if there are none.
+    validations:
+      required: true
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing requirements
+      description: Unit, integration and UI tests this needs.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      value: |
+        - [ ] Acceptance criteria met
+        - [ ] Tests added and passing in CI
+        - [ ] Docs updated
+        - [ ] PR merged with `Closes #<this issue>`
+    validations:
+      required: true
