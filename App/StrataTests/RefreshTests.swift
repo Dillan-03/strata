@@ -70,37 +70,61 @@ final class FolderWatcherTests: XCTestCase {
         let file = folder.appendingPathComponent(".claude.json")
         try Data("{}".utf8).write(to: file)
 
-        let first = expectation(description: "first change")
-        let second = expectation(description: "change after replacement")
         let counter = Counter()
-        let watcher = FileWatcher(url: file) {
-            switch counter.increment() {
-            case 1: first.fulfill()
-            case 3: second.fulfill()
-            default: break
-            }
-        }
+        let watcher = FileWatcher(url: file) { _ = counter.increment() }
         watcher.start()
         defer { watcher.stop() }
         Thread.sleep(forTimeInterval: 0.3)
 
         try Data(#"{"a":1}"#.utf8).write(to: file, options: .atomic)
-        wait(for: [first], timeout: 5)
+        XCTAssertTrue(waitUntil { counter.value > 0 }, "The first atomic replace wasn't reported")
         Thread.sleep(forTimeInterval: 0.6)
+
+        let seenBefore = counter.value
         try Data(#"{"a":2}"#.utf8).write(to: file, options: .atomic)
-        try Data(#"{"a":3}"#.utf8).write(to: file, options: .atomic)
-        wait(for: [second], timeout: 5)
+        XCTAssertTrue(waitUntil { counter.value > seenBefore }, "A change after the replacement wasn't reported")
+    }
+
+    func testFileWatcherReportsAFileThatAppearsLater() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("strata-file-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let file = folder.appendingPathComponent(".claude.json")
+
+        let counter = Counter()
+        let watcher = FileWatcher(url: file) { _ = counter.increment() }
+        watcher.start()
+        defer { watcher.stop() }
+        Thread.sleep(forTimeInterval: 0.3)
+
+        try Data("{}".utf8).write(to: file)
+        XCTAssertTrue(waitUntil(timeout: 6) { counter.value > 0 }, "Creating the missing file wasn't reported")
+    }
+
+    private func waitUntil(timeout: TimeInterval = 5, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        return condition()
     }
 }
 
 private final class Counter: @unchecked Sendable {
     private let lock = NSLock()
-    private var value = 0
+    private var count = 0
+
+    var value: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return count
+    }
 
     func increment() -> Int {
         lock.lock()
         defer { lock.unlock() }
-        value += 1
-        return value
+        count += 1
+        return count
     }
 }

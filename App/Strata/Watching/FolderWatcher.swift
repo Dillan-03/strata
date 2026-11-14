@@ -118,11 +118,13 @@ final class FileWatcher {
         }
     }
 
-    private func arm() {
+    /// `notify` reports a change once armed: set when re-arming after a replacement, or when a missing file appears,
+    /// because the file may have changed while nothing was watching it.
+    private func arm(notify: Bool = false) {
         guard !isStopped, source == nil else { return }
         let descriptor = open(url.path, O_EVTONLY)
         guard descriptor >= 0 else {
-            queue.asyncAfter(deadline: .now() + 2) { [weak self] in self?.arm() }
+            queue.asyncAfter(deadline: .now() + 2) { [weak self] in self?.arm(notify: true) }
             return
         }
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: descriptor, eventMask: [.write, .extend, .delete, .rename], queue: queue)
@@ -132,11 +134,12 @@ final class FileWatcher {
             if source.data.contains(.delete) || source.data.contains(.rename) {
                 source.cancel()
                 self.source = nil
-                self.queue.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.arm() }
+                self.queue.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.arm(notify: true) }
             }
         }
         source.setCancelHandler { close(descriptor) }
         self.source = source
         source.resume()
+        if notify { handler() }
     }
 }
