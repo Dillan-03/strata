@@ -95,6 +95,7 @@ final class ItemQueryTests: XCTestCase {
         let start = Date()
         let results = ItemQuery(text: "number 4999", scopes: [.user]).apply(to: many, in: report)
         XCTAssertEqual(results.map(\.name), ["skill-4999"])
-        XCTAssertLessThan(Date().timeIntervalSince(start), 1.0)
+        // Runs on every keystroke. About 0.05 s in a debug build; the limit leaves room for slow CI runners.
+        XCTAssertLessThan(Date().timeIntervalSince(start), 0.25)
     }
 }
