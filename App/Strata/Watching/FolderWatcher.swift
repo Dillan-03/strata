@@ -9,12 +9,14 @@ final class FolderWatcher {
     private let latency: CFTimeInterval
     private let handler: Handler
     private let queue = DispatchQueue(label: "com.dillankerai.strata.folder-watcher")
+    private let queueKey = DispatchSpecificKey<Void>()
     private var stream: FSEventStreamRef?
 
     init(paths: [String], latency: CFTimeInterval = 0.3, handler: @escaping Handler) {
         self.paths = paths
         self.latency = latency
         self.handler = handler
+        queue.setSpecific(key: queueKey, value: ())
     }
 
     deinit {
@@ -22,6 +24,24 @@ final class FolderWatcher {
     }
 
     func start() {
+        onQueue(startStream)
+    }
+
+    /// Stops on the callback queue, so no callback is still using this object when it returns.
+    func stop() {
+        onQueue(stopStream)
+    }
+
+    /// Runs inline when already on the queue: a callback's reference can be the last one, putting deinit there.
+    private func onQueue(_ work: () -> Void) {
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            work()
+        } else {
+            queue.sync(execute: work)
+        }
+    }
+
+    private func startStream() {
         guard stream == nil, !paths.isEmpty else { return }
         var context = FSEventStreamContext(
             version: 0,
@@ -51,7 +71,7 @@ final class FolderWatcher {
         self.stream = stream
     }
 
-    func stop() {
+    private func stopStream() {
         guard let stream else { return }
         FSEventStreamStop(stream)
         FSEventStreamInvalidate(stream)
@@ -67,12 +87,14 @@ final class FileWatcher {
     private let url: URL
     private let handler: Handler
     private let queue = DispatchQueue(label: "com.dillankerai.strata.file-watcher")
+    private let queueKey = DispatchSpecificKey<Void>()
     private var source: DispatchSourceFileSystemObject?
     private var isStopped = false
 
     init(url: URL, handler: @escaping Handler) {
         self.url = url
         self.handler = handler
+        queue.setSpecific(key: queueKey, value: ())
     }
 
     deinit {
@@ -84,9 +106,16 @@ final class FileWatcher {
     }
 
     func stop() {
-        isStopped = true
-        source?.cancel()
-        source = nil
+        let work = {
+            self.isStopped = true
+            self.source?.cancel()
+            self.source = nil
+        }
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            work()
+        } else {
+            queue.sync(execute: work)
+        }
     }
 
     private func arm() {
