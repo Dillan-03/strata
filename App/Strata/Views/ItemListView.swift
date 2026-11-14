@@ -65,37 +65,30 @@ struct ItemRow: View {
     let formatter: PathFormatter
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.invocation ?? item.name)
                     .font(item.kind == .instruction ? .body : .body.monospaced())
                     .strikethrough(isStruckThrough)
                     .foregroundStyle(item.applicability.isApplied || item.applicability == .conditional ? .primary : .secondary)
+                    .truncationMode(.middle)
                 if let summary = item.summary {
                     Text(summary)
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
+                Text("\(item.scope.title) · \(formatter.display(item.source.path))")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .truncationMode(.middle)
             }
+            .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(item.scope.title)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .frame(width: 90, alignment: .leading)
-
-            Text(formatter.display(item.source.path))
-                .font(.callout.monospaced())
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(width: 240, alignment: .leading)
-
             StatusBadge(applicability: item.applicability)
-                .frame(width: 150, alignment: .leading)
+                .fixedSize()
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 3)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.invocation ?? item.name), \(item.kind.title), \(item.scope.title), \(item.applicability.title)")
         .accessibilityIdentifier("itemRow.\(item.kind.rawValue).\(item.scope.rawValue).\(item.name)")
