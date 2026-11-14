@@ -230,7 +230,13 @@ struct PluginScanner {
             + (context.reader.isFile(root.appendingPathComponent("SKILL.md")) ? 1 : 0)
         let agents = context.walker.files(under: root.appendingPathComponent("agents")) { $0.pathExtension == "md" }.count
         let commands = context.walker.files(under: root.appendingPathComponent("commands")) { $0.pathExtension == "md" }.count
-        let hasHooks = context.reader.isFile(root.appendingPathComponent("hooks/hooks.json")) || manifest["hooks"] != nil
+        let hooksSource: String? = if context.reader.isFile(root.appendingPathComponent("hooks/hooks.json")) {
+            "hooks/hooks.json"
+        } else if manifest["hooks"] != nil {
+            "Declared in plugin.json"
+        } else {
+            nil
+        }
         let servers = MCPScanner.pluginServerDefinitions(root: root, manifest: manifest, reader: context.reader).count
 
         var parts: [String] = []
@@ -238,8 +244,10 @@ struct PluginScanner {
         if commands > 0 { parts.append("\(commands) command\(commands == 1 ? "" : "s")") }
         if agents > 0 { parts.append("\(agents) agent\(agents == 1 ? "" : "s")") }
         if servers > 0 { parts.append("\(servers) MCP server\(servers == 1 ? "" : "s")") }
-        if hasHooks { parts.append("hooks") }
-        return [Metadatum("Contributes", parts.isEmpty ? "Nothing Strata recognises" : parts.joined(separator: ", "))]
+        if hooksSource != nil { parts.append("hooks") }
+        var summary = [Metadatum("Contributes", parts.isEmpty ? "Nothing Strata recognises" : parts.joined(separator: ", "))]
+        if let hooksSource { summary.append(Metadatum("Hooks", hooksSource)) }
+        return summary
     }
 
     private static func isReservedOrigin(_ id: String) -> Bool {

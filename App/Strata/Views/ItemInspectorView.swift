@@ -198,13 +198,17 @@ private struct ItemDetail: View {
 
     @ViewBuilder private var pluginSections: some View {
         let components = report.components(ofPlugin: item)
+        let hooks = item.metadataValue("Hooks")
         Section("Contributes") {
-            if components.isEmpty {
-                Text(item.stage == .declared ? "Not installed, so nothing to show." : "No skills, agents or MCP servers found.")
+            if components.isEmpty && hooks == nil {
+                Text(item.stage == .declared ? "Not installed, so nothing to show." : "No skills, agents, MCP servers or hooks found.")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(components) { component in
                     relatedButton(component, label: "\(component.kind.title): \(component.invocation ?? component.name)")
+                }
+                if let hooks {
+                    LabeledContent("Hooks", value: hooks)
                 }
             }
         }
