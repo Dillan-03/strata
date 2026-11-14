@@ -47,7 +47,7 @@ final class InspectionFlowTests: XCTestCase {
         XCTAssertTrue(showRepoCopy.waitForExistence(timeout: 5))
         showRepoCopy.click()
 
-        XCTAssertTrue(app.staticTexts["Overridden By"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Which Copy Runs"].waitForExistence(timeout: 10))
     }
 
     func testCategoryPickerSwitchesToSkills() throws {
