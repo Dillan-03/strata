@@ -5,37 +5,71 @@ struct ContentView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        @Bindable var model = model
         NavigationSplitView {
-            List(selection: $model.selectedRepositoryID) {
-                Section("Repositories") {
-                    ForEach(model.repositories) { repository in
-                        Label(repository.displayName, systemImage: "folder")
-                            .tag(repository.id)
-                            .contextMenu {
-                                Button("Remove from Strata") { model.remove(repository.id) }
-                            }
-                    }
-                }
-            }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 232)
-            .safeAreaInset(edge: .bottom) {
-                Button {
-                    model.presentAddRepositoryPanel()
-                } label: {
-                    Label("Add Folder…", systemImage: "plus")
-                }
-                .buttonStyle(.borderless)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-            }
+            SidebarView()
+                .navigationSplitViewColumnWidth(min: 200, ideal: 232)
         } detail: {
             if let repository = model.selectedRepository {
-                RepositoryHeader(repository: repository)
+                if model.isMissing(repository.id) {
+                    MissingRepositoryView(repository: repository)
+                } else {
+                    RepositoryHeader(repository: repository)
+                }
             } else {
                 EmptyRepositoriesView()
             }
         }
+    }
+}
+
+struct SidebarView: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var model = model
+        List(selection: $model.selectedRepositoryID) {
+            Section("Repositories") {
+                ForEach(model.repositories) { repository in
+                    RepositoryRow(repository: repository, isMissing: model.isMissing(repository.id))
+                        .tag(repository.id)
+                        .contextMenu {
+                            if model.isMissing(repository.id) {
+                                Button("Locate…") { model.presentLocatePanel(for: repository.id) }
+                            } else {
+                                Button("Reveal in Finder") { model.revealInFinder(repository.url) }
+                            }
+                            Divider()
+                            Button("Remove from Strata") { model.remove(repository.id) }
+                        }
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                model.presentAddRepositoryPanel()
+            } label: {
+                Label("Add Folder…", systemImage: "plus")
+            }
+            .buttonStyle(.borderless)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+        }
+    }
+}
+
+private struct RepositoryRow: View {
+    let repository: Repository
+    let isMissing: Bool
+
+    var body: some View {
+        Label {
+            Text(repository.displayName)
+                .foregroundStyle(isMissing ? .secondary : .primary)
+        } icon: {
+            Image(systemName: isMissing ? "questionmark.folder" : "folder")
+        }
+        .help(isMissing ? "Can't find \(repository.url.path)" : repository.url.path)
+        .accessibilityLabel(isMissing ? "\(repository.displayName), missing" : repository.displayName)
     }
 }
 
@@ -55,6 +89,24 @@ private struct RepositoryHeader: View {
         .padding(20)
         .navigationTitle(repository.displayName)
         .navigationSubtitle(repository.url.path)
+    }
+}
+
+private struct MissingRepositoryView: View {
+    @Environment(AppModel.self) private var model
+    let repository: Repository
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("Can't Find \(repository.displayName)", systemImage: "questionmark.folder")
+        } description: {
+            Text("Nothing is at \(repository.url.path). The folder may have been moved, renamed or deleted, or its disk isn't connected.")
+        } actions: {
+            Button("Locate…") { model.presentLocatePanel(for: repository.id) }
+                .buttonStyle(.borderedProminent)
+            Button("Remove from Strata") { model.remove(repository.id) }
+        }
+        .navigationTitle(repository.displayName)
     }
 }
 
