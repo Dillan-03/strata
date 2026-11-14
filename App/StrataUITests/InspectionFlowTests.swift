@@ -42,7 +42,8 @@ final class InspectionFlowTests: XCTestCase {
         let issue = app.staticTexts["Global skill deploy hides the repo copy"]
         XCTAssertTrue(issue.waitForExistence(timeout: 10))
 
-        let showRepoCopy = app.buttons["Show /deploy (Repo)"]
+        // Link-style buttons aren't reported as buttons on macOS, so match any element type by identifier.
+        let showRepoCopy = app.descendants(matching: .any).matching(identifier: "showItem.project.deploy").firstMatch
         XCTAssertTrue(showRepoCopy.waitForExistence(timeout: 5))
         showRepoCopy.click()
 

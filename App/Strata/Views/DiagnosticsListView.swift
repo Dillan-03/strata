@@ -54,6 +54,7 @@ struct DiagnosticRow: View {
                                 model.reveal(itemID)
                             }
                             .buttonStyle(.link)
+                            .accessibilityIdentifier("showItem.\(item.scope.rawValue).\(item.name)")
                         }
                     }
                     ForEach(diagnostic.paths.prefix(2), id: \.self) { path in
