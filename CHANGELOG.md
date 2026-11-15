@@ -26,6 +26,6 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 
 - Static inspection only: Strata can't see what a running Claude Code session has loaded.
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
-- Supported on macOS 14, but CI tests on macOS 15 and 26 only, since GitHub retired its macOS 14 runners.
+- Requires macOS 15 Sequoia or later.
 
 [0.1.0]: https://github.com/Dillan-03/verbose-octo-carnival/releases/tag/v0.1.0

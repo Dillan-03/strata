@@ -31,4 +31,4 @@ What Strata does instead:
 
 ## Minimum macOS
 
-macOS 14 (Sonoma). The UI uses `NavigationSplitView`, `.inspector`, `ContentUnavailableView` and the Observation framework, which all need macOS 14.
+macOS 15 (Sequoia). The UI uses `NavigationSplitView`, `.inspector`, `ContentUnavailableView` and the Observation framework, which need macOS 14; the minimum is 15 because that's the oldest macOS CI can test on, since GitHub retired its macOS 14 runners in November 2026. StrataCore itself still builds for macOS 14, since it uses only Foundation.

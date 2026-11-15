@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- macOS 14 or later with Xcode 16, for the app
+- macOS 15 or later with Xcode 16, for the app
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.46 or later (`brew install xcodegen`)
 - [SwiftLint](https://github.com/realm/SwiftLint) 0.65 (`brew install swiftlint`), optional locally because CI runs it
 

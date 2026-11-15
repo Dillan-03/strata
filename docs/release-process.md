@@ -30,8 +30,6 @@ Releases are built entirely by `.github/workflows/release.yml`. Nothing is built
    brew update && brew upgrade --cask strata-inspector
    ```
 
-macOS 14 is the deployment target, but GitHub retired its macOS 14 runner image on 2 November 2026, so releases aren't tested on 14 in CI. Check a release on a macOS 14 machine by hand if you need that guarantee.
-
 ## Dry runs
 
 - Any pull request that touches `scripts/`, `packaging/` or the release workflow runs the build and verify jobs without publishing.

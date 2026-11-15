@@ -21,7 +21,7 @@ Screenshots are captured from the real app by CI whenever the app changes on `ma
 
 ## Requirements
 
-- macOS 14 Sonoma or later. CI tests releases on macOS 15 and 26; GitHub no longer offers macOS 14 runners.
+- macOS 15 Sequoia or later. CI tests every release on macOS 15 and 26.
 - Apple silicon or Intel
 
 ## Install
