@@ -11,7 +11,7 @@ The rules engine also builds on Linux with Swift 6.0 or later. No Xcode is neede
 ## First build
 
 ```bash
-git clone https://github.com/Dillan-03/verbose-octo-carnival.git strata
+git clone https://github.com/Dillan-03/strata.git
 cd strata
 swift test --package-path Packages/StrataCore
 cd App && xcodegen generate && open Strata.xcodeproj

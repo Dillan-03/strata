@@ -230,7 +230,7 @@ jobs:
             echo "## Install"
             echo
             echo '```bash'
-            echo "brew tap dillan-03/strata https://github.com/Dillan-03/verbose-octo-carnival"
+            echo "brew tap dillan-03/strata https://github.com/Dillan-03/strata"
             echo "brew install --cask dillan-03/strata/strata-inspector"
             echo '```'
             echo

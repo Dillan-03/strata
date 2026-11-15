@@ -6,7 +6,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [0.1.0] - 2026-11-14
 
-First release. Unsigned: builds are ad-hoc signed and not notarised until Developer ID signing is set up ([#22](https://github.com/Dillan-03/verbose-octo-carnival/issues/22)).
+First release. Unsigned: builds are ad-hoc signed and not notarised until Developer ID signing is set up ([#22](https://github.com/Dillan-03/strata/issues/22)).
 
 ### Added
 
@@ -28,4 +28,4 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
-[0.1.0]: https://github.com/Dillan-03/verbose-octo-carnival/releases/tag/v0.1.0
+[0.1.0]: https://github.com/Dillan-03/strata/releases/tag/v0.1.0

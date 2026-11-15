@@ -5,7 +5,7 @@ cask "strata-inspector" do
   url "@URL@"
   name "Strata"
   desc "Inspect where your Claude Code configuration comes from"
-  homepage "https://github.com/Dillan-03/verbose-octo-carnival"
+  homepage "https://github.com/Dillan-03/strata"
 
   depends_on macos: :sequoia
 

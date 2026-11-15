@@ -14,7 +14,7 @@ Only the latest release gets security fixes.
 
 ## Reporting a vulnerability
 
-Please don't open a public issue. Use **[Report a vulnerability](https://github.com/Dillan-03/verbose-octo-carnival/security/advisories/new)** on GitHub.
+Please don't open a public issue. Use **[Report a vulnerability](https://github.com/Dillan-03/strata/security/advisories/new)** on GitHub.
 
 Include what you found, how to reproduce it, and what an attacker could do with it. You'll get a reply within 7 days.
 
