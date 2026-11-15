@@ -18,6 +18,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Search across names, invocations, descriptions and paths, with filters for scope, status and items with issues.
 - Automatic refresh when configuration changes on disk, debounced and limited to the affected repository, with a setting to turn it off. ⌘R refreshes by hand.
 - Masking of credentials in MCP headers, environment values, arguments and URLs before anything reaches the UI.
+- App icon: three stacked layers with the one that wins on top, drawn on Apple's macOS icon template.
 - Homebrew cask `strata-inspector`, installed from this repository as a tap.
 - Release pipeline that builds a universal app, labels unsigned builds honestly, and verifies checksum, signature, launch and the Homebrew install, uninstall and zap round trip on macOS 15 and 26.
 - Issue forms, a pull request template, an issue-title check, and contributing, code of conduct and security documents.

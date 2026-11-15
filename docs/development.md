@@ -24,6 +24,7 @@ cd App && xcodegen generate && open Strata.xcodeproj
 ```text
 App/
   project.yml            XcodeGen spec: targets, settings, Info.plist keys
+  Icon/AppIcon.svg       Source for the app icon PNGs in Strata/Assets.xcassets
   Strata/                SwiftUI app: AppModel, views, folder watching
   StrataTests/           App unit tests (models, persistence, refresh)
   StrataUITests/         XCUITest flows against fixture folders
@@ -36,7 +37,7 @@ Packages/StrataCore/
     Model/               ConfigItem, Diagnostic, InspectionReport, queries
   Tests/StrataCoreTests/ Fixture-based tests for every rule
 packaging/               Homebrew cask template
-scripts/                 Release build, signing, packaging and install checks
+scripts/                 Release build, signing, packaging, install checks and icon rendering
 docs/                    Architecture, resolution rules, release process
 ```
 
@@ -62,6 +63,10 @@ shellcheck scripts/*.sh
 ```
 
 CI also runs `actionlint` on the workflows.
+
+## Changing the app icon
+
+Edit `App/Icon/AppIcon.svg`, then run `scripts/render-app-icon.sh` to regenerate the ten PNGs (it needs `brew install librsvg`). Keep the squircle path as it is and draw only inside it: macOS 26 puts any icon whose pixels don't match Apple's template shape on a grey tile.
 
 ## Changing a resolution rule
 
