@@ -62,12 +62,11 @@ struct ChangeReviewSheet: View {
             }
             footer
         }
-        .frame(minWidth: 860, idealWidth: 1040, minHeight: 560, idealHeight: 720)
+        .frame(minWidth: 820, idealWidth: 980, minHeight: 460, idealHeight: 620)
         .onAppear {
             let selected = model.selectedRepositoryID.map { model.changes(reaching: $0) } ?? []
             selection = selected.first?.id ?? model.pendingChanges.first?.id
         }
-        .accessibilityIdentifier("changeReviewSheet")
     }
 
     private var changeList: some View {
@@ -151,11 +150,13 @@ struct ChangeReviewSheet: View {
 
 private struct ChangeRow: View {
     let change: ConfigChange
+    /// `.increased` on the selected row, where the kind's colour loses contrast against the selection.
+    @Environment(\.backgroundProminence) private var backgroundProminence
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: change.kind.symbol)
-                .foregroundStyle(change.kind.tint)
+                .foregroundStyle(backgroundProminence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(change.kind.tint))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(change.item.invocation ?? change.item.name)
