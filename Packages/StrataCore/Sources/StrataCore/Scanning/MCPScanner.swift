@@ -181,7 +181,7 @@ struct MCPScanner {
         }
         metadata.append(Metadatum("Defined in", context.displayPath(definition.file)))
 
-        return ConfigItem(
+        var item = ConfigItem(
             kind: .mcpServer,
             name: definition.name,
             summary: metadata.first { $0.label == "URL" || $0.label == "Command" }?.value,
@@ -192,8 +192,10 @@ struct MCPScanner {
             stage: .discovered,
             loadTiming: .atLaunch,
             loadBlocker: blocker,
-            matchKey: matchSource.isEmpty ? nil : Self.fingerprint(matchSource)
+            matchKey: matchSource.isEmpty ? nil : Fingerprint.of(matchSource)
         )
+        item.fingerprint = Fingerprint.of(json: raw)
+        return item
     }
 
     private func applyProjectApproval(to item: inout ConfigItem, projectEntry: [String: Any]?) {
@@ -299,15 +301,5 @@ struct MCPScanner {
             components.path = String(components.path.dropLast())
         }
         return components.string ?? text
-    }
-
-    /// FNV-1a, so endpoints can be compared without storing them.
-    static func fingerprint(_ text: String) -> String {
-        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
-        for byte in text.utf8 {
-            hash ^= UInt64(byte)
-            hash = hash &* 0x0000_0100_0000_01B3
-        }
-        return String(hash, radix: 16)
     }
 }
