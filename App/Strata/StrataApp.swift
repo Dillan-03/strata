@@ -41,6 +41,12 @@ struct StrataApp: App {
                 .keyboardShortcut("r")
                 .disabled(model.selectedRepository == nil)
 
+                Button("Review Changes…") {
+                    model.isReviewingChanges = true
+                }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
+                .disabled(model.pendingChanges.isEmpty)
+
                 Divider()
 
                 ForEach(Category.allCases) { category in

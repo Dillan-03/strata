@@ -58,6 +58,7 @@ struct SettingsScanner {
                     ]
                 )
                 item.fingerprint = Fingerprint.of(json: layer.values[key] ?? NSNull())
+                context.capture(layer.values[key] ?? NSNull(), root: key, for: item.id)
                 return item
             }
         }

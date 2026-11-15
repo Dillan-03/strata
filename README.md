@@ -9,6 +9,8 @@ Strata is a native macOS app that shows where your Claude Code configuration com
 
 It's for questions like *"Why isn't my repo's `/deploy` skill running?"* (a personal one with the same name wins) or *"Which `.mcp.json` server needs approval?"*.
 
+When configuration changes on disk, from any editor or a `git checkout`, **Review Changes** shows what changed since you last looked. It shows each change as a diff with secrets masked. It also shows the repositories each change reaches, and whether a running Claude Code session picks it up.
+
 Strata is read-only. It never edits Claude Code configuration, runs MCP servers, or makes network requests.
 
 ![Strata's inspector for a /deploy skill: the global copy runs and the repository's copy is overridden](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/inspector.png)
@@ -16,6 +18,8 @@ Strata is read-only. It never edits Claude Code configuration, runs MCP servers,
 | Issues | An MCP server awaiting approval |
 | --- | --- |
 | ![The issues list, led by a global skill hiding the repository's copy](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/issues.png) | ![An MCP server from .mcp.json, shown as Conditional until approved, with Strata's note that it never runs servers](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/mcp.png) |
+
+![Review Changes: a global skill's description edited, shown as a line diff, picked up live by Claude Code](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/review.png)
 
 Screenshots are captured from the real app by CI whenever the app changes on `main`, using made-up configuration.
 

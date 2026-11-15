@@ -41,9 +41,11 @@ public struct Inspector: Sendable {
         items += AgentScanner(context: context, plugins: plugins).scan()
         items += MCPScanner(context: context, layers: layers, plugins: plugins).scan()
         items += InstructionScanner(context: context, layers: layers).scan()
+        var contents = context.contents
         items = items.map { item in
             var item = item
             if item.fingerprint == nil { item.fingerprint = context.fileFingerprint(for: item.source.path) }
+            if contents[item.id] == nil { contents[item.id] = context.fileContent(for: item.source.path) }
             return item
         }
 
@@ -56,7 +58,8 @@ public struct Inspector: Sendable {
             scannedAt: date,
             items: resolved,
             diagnostics: context.diagnostics.sorted { ($0.severity, $0.title) < ($1.severity, $1.title) },
-            sources: context.sources
+            sources: context.sources,
+            contents: contents
         )
     }
 }

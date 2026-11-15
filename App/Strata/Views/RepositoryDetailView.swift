@@ -11,6 +11,10 @@ struct RepositoryDetailView: View {
             if let report = model.reports[repository.id] {
                 VStack(spacing: 0) {
                     SummaryBar(report: report)
+                    let changes = model.changes(reaching: repository.id).count
+                    if changes > 0 {
+                        ChangeBanner(count: changes)
+                    }
                     if model.category == .issues {
                         DiagnosticsListView(report: report, formatter: model.pathFormatter(for: repository))
                     } else {
