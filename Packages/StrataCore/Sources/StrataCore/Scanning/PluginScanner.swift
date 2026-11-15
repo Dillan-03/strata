@@ -117,7 +117,7 @@ struct PluginScanner {
             stage = .declared
         }
 
-        let item = ConfigItem(
+        var item = ConfigItem(
             kind: .plugin,
             name: id,
             summary: manifest["description"] as? String,
@@ -128,6 +128,13 @@ struct PluginScanner {
             stage: stage,
             loadTiming: .atLaunch
         )
+        item.fingerprint = Fingerprint.of(json: [
+            "enabled": enabled.map { $0 as Any } ?? NSNull(),
+            "decidedBy": decidedBy?.url.path ?? NSNull(),
+            "root": root?.path ?? NSNull(),
+            "version": applicable?.version ?? NSNull(),
+            "manifest": manifest,
+        ] as [String: Any])
 
         if !installs.isEmpty, !rootExists {
             context.report(Diagnostic(

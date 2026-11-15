@@ -199,6 +199,8 @@ public struct ConfigItem: Identifiable, Hashable, Codable, Sendable {
     public var matchKey: String?
     /// Order instruction files are read in, lowest first.
     public var loadOrder: Int?
+    /// A hash of what defines the item (its file, or its entry in a JSON file), used to notice edits between scans.
+    public var fingerprint: String?
 
     public var applicability: Applicability
     /// 1 is the highest-precedence definition among items that share `name`.

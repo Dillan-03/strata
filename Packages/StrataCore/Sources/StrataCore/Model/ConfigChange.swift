@@ -1,0 +1,103 @@
+import Foundation
+
+/// One difference between two scans of the same repository: something added, edited, removed or moved on disk,
+/// by any editor, tool or `git checkout`.
+public struct ConfigChange: Identifiable, Hashable, Sendable {
+    public enum Kind: String, Hashable, Sendable {
+        case created, updated, deleted, renamed
+
+        public var title: String {
+            switch self {
+            case .created: "Added"
+            case .updated: "Edited"
+            case .deleted: "Removed"
+            case .renamed: "Moved"
+            }
+        }
+    }
+
+    /// Which repositories a change can affect.
+    public enum Reach: String, Hashable, Sendable {
+        /// Every repository: managed, global, plugin and claude.ai configuration.
+        case global
+        /// Every repository under a parent folder, through that folder's instruction files.
+        case shared
+        /// This repository only.
+        case repository
+
+        public init(_ scope: Scope) {
+            switch scope {
+            case .managed, .user, .plugin, .synced: self = .global
+            case .ancestor: self = .shared
+            case .project, .local, .nested: self = .repository
+            }
+        }
+
+        public var title: String {
+            switch self {
+            case .global: "Every repository"
+            case .shared: "Repositories in a parent folder"
+            case .repository: "This repository"
+            }
+        }
+    }
+
+    public let kind: Kind
+    /// The item as it is now, or as it was for a removal.
+    public let item: ConfigItem
+    /// The item before an edit or a move.
+    public let previous: ConfigItem?
+    public let reach: Reach
+    public let pickup: SessionPickup
+
+    public var id: String { "\(kind.rawValue):\(previous?.id ?? "-")>\(item.id)" }
+
+    public init(kind: Kind, item: ConfigItem, previous: ConfigItem? = nil, pickup: SessionPickup) {
+        self.kind = kind
+        self.item = item
+        self.previous = previous
+        self.reach = Reach(item.scope)
+        self.pickup = pickup
+    }
+}
+
+/// Whether a Claude Code session that's already running sees a change, as the Claude Code docs describe it.
+/// Strata can't see inside a session, so this is what the docs promise, not an observation.
+public struct SessionPickup: Hashable, Sendable {
+    public enum Timing: String, Hashable, Sendable {
+        /// Picked up within seconds, with nothing to do.
+        case live
+        /// Loads the next time Claude works in that folder or touches a matching file.
+        case onDemand
+        /// Run `/reload-skills`.
+        case reloadSkills
+        /// Run `/reload-plugins`.
+        case reloadPlugins
+        /// Only a new session sees it.
+        case nextSession
+        /// The docs don't say.
+        case unknown
+
+        public var title: String {
+            switch self {
+            case .live: "Picked up live"
+            case .onDemand: "When next loaded"
+            case .reloadSkills: "Run /reload-skills"
+            case .reloadPlugins: "Run /reload-plugins"
+            case .nextSession: "Restart Claude Code"
+            case .unknown: "Unknown"
+            }
+        }
+    }
+
+    public let timing: Timing
+    public let explanation: String
+    /// The Claude Code docs page the rule comes from.
+    public let source: URL?
+
+    public init(_ timing: Timing, _ explanation: String, source: String?) {
+        self.timing = timing
+        self.explanation = explanation
+        self.source = source.flatMap(URL.init(string:))
+    }
+}

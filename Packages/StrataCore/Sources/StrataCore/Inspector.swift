@@ -41,6 +41,11 @@ public struct Inspector: Sendable {
         items += AgentScanner(context: context, plugins: plugins).scan()
         items += MCPScanner(context: context, layers: layers, plugins: plugins).scan()
         items += InstructionScanner(context: context, layers: layers).scan()
+        items = items.map { item in
+            var item = item
+            if item.fingerprint == nil { item.fingerprint = context.fileFingerprint(for: item.source.path) }
+            return item
+        }
 
         let displayPath = { (path: String) in context.displayPath(URL(fileURLWithPath: path)) }
         let resolved = Resolver(displayPath: displayPath).resolve(items)

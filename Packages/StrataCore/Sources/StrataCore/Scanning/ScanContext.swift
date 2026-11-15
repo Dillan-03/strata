@@ -8,6 +8,7 @@ final class ScanContext {
     let walker: DirectoryWalker
 
     private(set) var diagnostics: [Diagnostic] = []
+    private var fileFingerprints: [String: String] = [:]
     private var sourcesByPath: [String: ScannedSource] = [:]
     private var sourceOrder: [String] = []
 
@@ -86,6 +87,7 @@ final class ScanContext {
             ))
             return nil
         case .success(let text):
+            fileFingerprints[url.standardizedFileURL.path] = Fingerprint.of(text)
             do {
                 let parsed = try Frontmatter.parse(document: text)
                 record(label, url, .found)
@@ -103,6 +105,11 @@ final class ScanContext {
                 return (.empty, text)
             }
         }
+    }
+
+    /// Fingerprint of a Markdown file read during this scan, for items whose whole definition is that file.
+    func fileFingerprint(for path: String) -> String? {
+        fileFingerprints[URL(fileURLWithPath: path).standardizedFileURL.path]
     }
 
     /// Path shown to the user: relative to the repository or `~` when possible.

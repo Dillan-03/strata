@@ -175,6 +175,33 @@ Sources: [Settings](https://code.claude.com/docs/en/settings.md), [`.claude` dir
 
 Environment variables aren't a level in this stack, and Strata can't see them. A few security keys honour a stricter value from a lower file even over managed settings.
 
+## Changes between scans
+
+Strata compares each scan with the one before it and reports what was added, edited, removed or moved. That covers edits from any editor, tool or `git checkout` (`ChangeDetector`).
+
+- **Edited** means the item's fingerprint changed. The fingerprint is a hash of its file, or of its own entry in a JSON file. Key order and whitespace in JSON don't count. Fingerprints stay in memory and are never shown or saved.
+- **Moved** means one item disappeared and another of the same kind appeared with identical content. This applies to skills, commands, subagents, instruction files and MCP servers. It doesn't apply to settings or plugins, where two unrelated entries can hold the same value.
+- **Reach**:
+    - global: managed, `~/.claude`, plugins and claude.ai, which affect every repository
+    - shared: parent-folder instruction files, which affect every repository under that folder
+    - repository: everything else
+- A status change caused by another item isn't reported against the item that didn't change. For example, a new repo skill overriding a global one is reported as the repo skill being added, not as an edit to the global skill.
+
+### When a running session sees a change
+
+Strata can't see inside a running session. This is what the Claude Code docs say, as of November 2026.
+
+| Change | Running session | Source |
+| --- | --- | --- |
+| Skill in `~/.claude/skills` or the project's `.claude/skills` | Picked up live. A skills folder created after the session started needs `/reload-skills`; Strata suggests it for the first skill in a folder | [Skills](https://code.claude.com/docs/en/skills#edit-a-skill-during-a-session) |
+| Subagent in `~/.claude/agents` or the project's `.claude/agents` | Picked up within seconds. The first agent in a folder created after the session started needs a restart | [Subagents](https://code.claude.com/docs/en/sub-agents#write-subagent-files) |
+| Plugin, a plugin's skills, agents or MCP servers, or `enabledPlugins` | `/reload-plugins`, or a new session | [Plugins](https://code.claude.com/docs/en/plugins/install#keep-plugins-updated) |
+| Settings | Reloaded live, except `model`, `effortLevel` and `modelSettings`, which are read at session start | [Settings](https://code.claude.com/docs/en/settings#when-edits-take-effect) |
+| Instruction files loaded at launch | A new session. The project-root `CLAUDE.md` is also re-read after `/compact` | [Memory](https://code.claude.com/docs/en/memory) |
+| Subdirectory `CLAUDE.md` and path-scoped rules | The next time they load on demand | [Memory](https://code.claude.com/docs/en/memory) |
+| MCP servers in `~/.claude.json` or `.mcp.json` | Unknown: the docs don't say | [MCP](https://code.claude.com/docs/en/mcp) |
+| Commands in `.claude/commands`, nested, managed and claude.ai skills | Unknown: the docs don't say | [Skills](https://code.claude.com/docs/en/skills) |
+
 ## Not covered in v0.1
 
 - Anything passed on the command line: `--settings`, `--agents`, `--add-dir`, `--plugin-dir`, `--mcp-config`

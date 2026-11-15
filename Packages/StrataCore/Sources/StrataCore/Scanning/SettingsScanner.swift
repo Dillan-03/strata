@@ -45,7 +45,7 @@ struct SettingsScanner {
     func items(from layers: [SettingsLayer]) -> [ConfigItem] {
         layers.flatMap { layer in
             layer.values.keys.sorted().map { key in
-                ConfigItem(
+                var item = ConfigItem(
                     kind: .setting,
                     name: key,
                     summary: Self.summary(of: layer.values[key], key: key),
@@ -57,6 +57,8 @@ struct SettingsScanner {
                         Metadatum("Value type", Self.typeName(of: layer.values[key])),
                     ]
                 )
+                item.fingerprint = Fingerprint.of(json: layer.values[key] ?? NSNull())
+                return item
             }
         }
     }
