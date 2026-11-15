@@ -5,15 +5,6 @@ import Foundation
 public struct ConfigChange: Identifiable, Hashable, Sendable {
     public enum Kind: String, Hashable, Sendable {
         case created, updated, deleted, renamed
-
-        public var title: String {
-            switch self {
-            case .created: "Added"
-            case .updated: "Edited"
-            case .deleted: "Removed"
-            case .renamed: "Moved"
-            }
-        }
     }
 
     /// Which repositories a change can affect.
@@ -30,14 +21,6 @@ public struct ConfigChange: Identifiable, Hashable, Sendable {
             case .managed, .user, .plugin, .synced: self = .global
             case .ancestor: self = .shared
             case .project, .local, .nested: self = .repository
-            }
-        }
-
-        public var title: String {
-            switch self {
-            case .global: "Every repository"
-            case .shared: "Repositories in a parent folder"
-            case .repository: "This repository"
             }
         }
     }
@@ -77,17 +60,6 @@ public struct SessionPickup: Hashable, Sendable {
         case nextSession
         /// The docs don't say.
         case unknown
-
-        public var title: String {
-            switch self {
-            case .live: "Picked up live"
-            case .onDemand: "When next loaded"
-            case .reloadSkills: "Run /reload-skills"
-            case .reloadPlugins: "Run /reload-plugins"
-            case .nextSession: "Restart Claude Code"
-            case .unknown: "Unknown"
-            }
-        }
     }
 
     public let timing: Timing
