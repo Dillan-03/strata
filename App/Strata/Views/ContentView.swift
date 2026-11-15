@@ -6,6 +6,7 @@ struct ContentView: View {
     @AppStorage(PreferenceKey.autoRefresh) private var autoRefresh = true
 
     var body: some View {
+        @Bindable var model = model
         NavigationSplitView {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 200, ideal: 232)
@@ -31,6 +32,10 @@ struct ContentView: View {
         }
         .onAppear {
             model.configureWatching(enabled: autoRefresh)
+        }
+        .sheet(isPresented: $model.isReviewingChanges) {
+            ChangeReviewSheet()
+                .environment(model)
         }
     }
 }

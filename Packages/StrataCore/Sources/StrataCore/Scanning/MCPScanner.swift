@@ -195,6 +195,7 @@ struct MCPScanner {
             matchKey: matchSource.isEmpty ? nil : Fingerprint.of(matchSource)
         )
         item.fingerprint = Fingerprint.of(json: raw)
+        context.capture(raw, for: item.id)
         return item
     }
 

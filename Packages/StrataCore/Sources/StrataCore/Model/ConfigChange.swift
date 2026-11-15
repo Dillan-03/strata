@@ -30,15 +30,28 @@ public struct ConfigChange: Identifiable, Hashable, Sendable {
     public let item: ConfigItem
     /// The item before an edit or a move.
     public let previous: ConfigItem?
+    /// What defined the item before, masked. Nil for a creation, or when the scan couldn't read it.
+    public let before: ItemContent?
+    /// What defines it now, masked. Nil for a removal.
+    public let after: ItemContent?
     public let reach: Reach
     public let pickup: SessionPickup
 
     public var id: String { "\(kind.rawValue):\(previous?.id ?? "-")>\(item.id)" }
 
-    public init(kind: Kind, item: ConfigItem, previous: ConfigItem? = nil, pickup: SessionPickup) {
+    public init(
+        kind: Kind,
+        item: ConfigItem,
+        previous: ConfigItem? = nil,
+        before: ItemContent? = nil,
+        after: ItemContent? = nil,
+        pickup: SessionPickup
+    ) {
         self.kind = kind
         self.item = item
         self.previous = previous
+        self.before = before
+        self.after = after
         self.reach = Reach(item.scope)
         self.pickup = pickup
     }

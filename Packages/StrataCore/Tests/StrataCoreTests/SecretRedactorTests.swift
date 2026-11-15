@@ -24,6 +24,12 @@ final class SecretRedactorTests: XCTestCase {
         XCTAssertEqual(redacted, [mask, mask, mask, mask, "plain-argument"])
     }
 
+    func testMasksPasswordsInConnectionStringArguments() {
+        let redacted = SecretRedactor.redactArguments(["-y", "server-postgres", "postgresql://app:example-password@localhost/acme"])
+        XCTAssertFalse(redacted.joined().contains("example-password"))
+        XCTAssertTrue(redacted[2].contains("localhost/acme"))
+    }
+
     func testMasksBearerTokenInsideText() {
         XCTAssertEqual(SecretRedactor.redactText("Authorization: Bearer abcdef123456"), "Authorization: \(mask)")
     }

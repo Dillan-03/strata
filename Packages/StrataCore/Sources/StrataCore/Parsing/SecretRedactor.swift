@@ -50,7 +50,29 @@ public enum SecretRedactor {
         return result
     }
 
-    /// Redacts command line arguments: values that follow a sensitive flag, `--flag=value` forms, and token-like strings.
+    /// Masks secrets in a Markdown file: token-shaped strings anywhere, and the value in a `NAME=value` or
+    /// `NAME: value` line whose name looks sensitive. A value with spaces in it is prose, not a credential, and stays.
+    public static func redactDocument(_ text: String) -> String {
+        guard let assignment else { return redactText(text) }
+        let lines = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).map { line in
+            let line = String(line)
+            let range = NSRange(line.startIndex..., in: line)
+            guard let match = assignment.firstMatch(in: line, range: range),
+                  let nameRange = Range(match.range(at: 2), in: line),
+                  let valueRange = Range(match.range(at: 4), in: line),
+                  isSensitiveName(String(line[nameRange])) else { return line }
+            let value = String(line[valueRange]).trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            return line.replacingCharacters(in: valueRange, with: maskValue(value))
+        }
+        return redactText(lines.joined(separator: "\n"))
+    }
+
+    private static let assignment = try? NSRegularExpression(
+        pattern: "^(\\s*(?:[-*]\\s+)?(?:export\\s+)?[\"']?)([A-Za-z_][A-Za-z0-9_.-]*)([\"']?\\s*[:=]\\s*)(\\S+?)\\s*$"
+    )
+
+    /// Redacts command line arguments: values that follow a sensitive flag, `--flag=value` forms, credentials in URLs
+    /// such as database connection strings, and token-like strings.
     public static func redactArguments(_ arguments: [String]) -> [String] {
         var redacted: [String] = []
         var maskNext = false
@@ -72,7 +94,7 @@ public enum SecretRedactor {
                 maskNext = true
                 continue
             }
-            redacted.append(redactText(argument))
+            redacted.append(argument.contains("://") ? redactURL(argument) : redactText(argument))
         }
         return redacted
     }

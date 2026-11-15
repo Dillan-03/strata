@@ -20,19 +20,27 @@ public enum ChangeDetector {
 
         for item in new.items {
             guard let was = before[item.id], was.fingerprint != item.fingerprint else { continue }
-            changes.append(ConfigChange(kind: .updated, item: item, previous: was, pickup: pickup(.updated, item, old: old)))
+            changes.append(ConfigChange(
+                kind: .updated, item: item, previous: was,
+                before: old.contents[was.id], after: new.contents[item.id],
+                pickup: pickup(.updated, item, old: old)
+            ))
         }
 
         for item in created where movableKinds.contains(item.kind) && item.fingerprint != nil {
             guard let index = deleted.firstIndex(where: { $0.kind == item.kind && $0.fingerprint == item.fingerprint }) else { continue }
             let was = deleted.remove(at: index)
-            changes.append(ConfigChange(kind: .renamed, item: item, previous: was, pickup: pickup(.renamed, item, old: old)))
+            changes.append(ConfigChange(
+                kind: .renamed, item: item, previous: was,
+                before: old.contents[was.id], after: new.contents[item.id],
+                pickup: pickup(.renamed, item, old: old)
+            ))
         }
         let moved = Set(changes.filter { $0.kind == .renamed }.map(\.item.id))
         created.removeAll { moved.contains($0.id) }
 
-        changes += created.map { ConfigChange(kind: .created, item: $0, pickup: pickup(.created, $0, old: old)) }
-        changes += deleted.map { ConfigChange(kind: .deleted, item: $0, pickup: pickup(.deleted, $0, old: old)) }
+        changes += created.map { ConfigChange(kind: .created, item: $0, after: new.contents[$0.id], pickup: pickup(.created, $0, old: old)) }
+        changes += deleted.map { ConfigChange(kind: .deleted, item: $0, before: old.contents[$0.id], pickup: pickup(.deleted, $0, old: old)) }
 
         return changes.sorted {
             ($0.reach.order, $0.item.kind.order, $0.item.name, $0.kind.rawValue) < ($1.reach.order, $1.item.kind.order, $1.item.name, $1.kind.rawValue)

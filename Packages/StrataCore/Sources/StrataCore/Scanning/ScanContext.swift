@@ -9,6 +9,10 @@ final class ScanContext {
 
     private(set) var diagnostics: [Diagnostic] = []
     private var fileFingerprints: [String: String] = [:]
+    /// Text of each Markdown file read, held only for the length of the scan and masked before it leaves.
+    private var fileTexts: [String: String] = [:]
+    /// Masked content captured by scanners for items defined inside JSON files.
+    private(set) var contents: [ConfigItem.ID: ItemContent] = [:]
     private var sourcesByPath: [String: ScannedSource] = [:]
     private var sourceOrder: [String] = []
 
@@ -88,6 +92,7 @@ final class ScanContext {
             return nil
         case .success(let text):
             fileFingerprints[url.standardizedFileURL.path] = Fingerprint.of(text)
+            fileTexts[url.standardizedFileURL.path] = text
             do {
                 let parsed = try Frontmatter.parse(document: text)
                 record(label, url, .found)
@@ -110,6 +115,16 @@ final class ScanContext {
     /// Fingerprint of a Markdown file read during this scan, for items whose whole definition is that file.
     func fileFingerprint(for path: String) -> String? {
         fileFingerprints[URL(fileURLWithPath: path).standardizedFileURL.path]
+    }
+
+    /// Records what defines an item that lives inside a JSON file, masked, for diffs between scans.
+    func capture(_ value: Any, root: String? = nil, for itemID: ConfigItem.ID) {
+        contents[itemID] = .keyed(value, root: root)
+    }
+
+    /// The masked text of a Markdown file read during this scan, for items whose whole definition is that file.
+    func fileContent(for path: String) -> ItemContent? {
+        fileTexts[URL(fileURLWithPath: path).standardizedFileURL.path].map(ItemContent.document)
     }
 
     /// Path shown to the user: relative to the repository or `~` when possible.
