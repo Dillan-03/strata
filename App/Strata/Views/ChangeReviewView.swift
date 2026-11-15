@@ -84,7 +84,7 @@ struct ChangeReviewSheet: View {
                 ForEach(groups) { group in
                     Section(group.title) {
                         ForEach(group.changes) { pending in
-                            ChangeRow(change: pending.change)
+                            ChangeRow(change: pending.change, isSelected: pending.id == selection)
                                 .tag(pending.id)
                         }
                     }
@@ -150,13 +150,13 @@ struct ChangeReviewSheet: View {
 
 private struct ChangeRow: View {
     let change: ConfigChange
-    /// `.increased` on the selected row, where the kind's colour loses contrast against the selection.
-    @Environment(\.backgroundProminence) private var backgroundProminence
+    /// The kind's colour loses contrast against the selection, so a selected row's icon follows its text instead.
+    let isSelected: Bool
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: change.kind.symbol)
-                .foregroundStyle(backgroundProminence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(change.kind.tint))
+                .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(change.kind.tint))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(change.item.invocation ?? change.item.name)
