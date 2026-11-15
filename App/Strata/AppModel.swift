@@ -9,6 +9,9 @@ final class AppModel {
     private(set) var missingRepositoryIDs: Set<Repository.ID> = []
     private(set) var reports: [Repository.ID: InspectionReport] = [:]
     private(set) var scanningRepositoryIDs: Set<Repository.ID> = []
+    /// Changes since the last review, across every scanned repository.
+    private(set) var pendingChanges: [PendingChange] = []
+    var isReviewingChanges = false
 
     var selectedRepositoryID: Repository.ID?
     var category: Category = .all
@@ -18,6 +21,8 @@ final class AppModel {
 
     let environment: ScanEnvironment
     private let store: RepositoryStore
+    /// Each repository's report as of the last review: its first scan this launch, or when changes were last marked reviewed.
+    private var baselines: [Repository.ID: InspectionReport] = [:]
     @ObservationIgnored private var folderWatcher: FolderWatcher?
     @ObservationIgnored private var fileWatcher: FileWatcher?
     @ObservationIgnored private lazy var scheduler = RefreshScheduler { [weak self] batch in
@@ -75,6 +80,11 @@ final class AppModel {
         isInspectorPresented = true
     }
 
+    /// `~/…` for paths in the home folder; used where a path isn't relative to one repository.
+    func abbreviatingHome(_ path: String) -> String {
+        PathFormatter(repositoryPath: "", homePath: environment.homeDirectory.path).abbreviatingHome(path)
+    }
+
     func pathFormatter(for repository: Repository) -> PathFormatter {
         PathFormatter(repositoryPath: repository.url.standardizedFileURL.path, homePath: environment.homeDirectory.path)
     }
@@ -104,9 +114,73 @@ final class AppModel {
             missingRepositoryIDs.insert(id)
         }
         reports[id] = report
+        if !exists {
+            baselines[id] = nil
+        } else if baselines[id] == nil {
+            baselines[id] = report
+        }
+        updatePendingChanges()
         if let selectedItemID, report.item(withID: selectedItemID) == nil, selectedRepositoryID == id {
             self.selectedItemID = nil
         }
+    }
+
+    // MARK: - Changes
+
+    /// When the oldest baseline was taken: changes are listed from this moment.
+    var changesSince: Date? {
+        baselines.values.map(\.scannedAt).min()
+    }
+
+    /// Changes that reach a repository: its own, plus global and parent-folder ones.
+    func changes(reaching id: Repository.ID) -> [PendingChange] {
+        pendingChanges.filter { $0.repositoryIDs.contains(id) }
+    }
+
+    /// Takes the current scans as the new starting point, so the list empties until something changes again.
+    func markChangesReviewed() {
+        baselines = reports.filter { !missingRepositoryIDs.contains($0.key) }
+        pendingChanges = []
+    }
+
+    /// What a change does in each repository that had a scan before it: applies, overridden, or out of reach.
+    func impacts(of change: ConfigChange) -> [RepositoryEffect] {
+        let scanned = repositories.filter { baselines[$0.id] != nil && reports[$0.id] != nil }
+        let impacts = ChangeImpact.impacts(
+            of: change,
+            before: scanned.compactMap { baselines[$0.id] },
+            after: scanned.compactMap { reports[$0.id] }
+        )
+        return impacts.compactMap { impact in
+            scanned.first { $0.url.standardizedFileURL.path == impact.repositoryPath }.map { RepositoryEffect(repository: $0, impact: impact) }
+        }
+    }
+
+    /// Problems Strata reports for the changed item now, in any repository it reaches.
+    func conflicts(for pending: PendingChange) -> [Diagnostic] {
+        guard pending.change.kind != .deleted else { return [] }
+        var seen = Set<Diagnostic.ID>()
+        return pending.repositoryIDs
+            .flatMap { reports[$0]?.diagnostics(for: pending.change.item.id) ?? [] }
+            .filter { $0.severity != .info && seen.insert($0.id).inserted }
+    }
+
+    /// A global change appears in every repository's scan with the same id, so it's listed once with each repository it reached.
+    private func updatePendingChanges() {
+        var merged: [String: PendingChange] = [:]
+        var order: [String] = []
+        for repository in repositories {
+            guard let baseline = baselines[repository.id], let report = reports[repository.id] else { continue }
+            for change in ChangeDetector.changes(from: baseline, to: report) {
+                if let existing = merged[change.id] {
+                    merged[change.id] = PendingChange(change: existing.change, repositoryIDs: existing.repositoryIDs + [repository.id])
+                } else {
+                    merged[change.id] = PendingChange(change: change, repositoryIDs: [repository.id])
+                    order.append(change.id)
+                }
+            }
+        }
+        pendingChanges = order.compactMap { merged[$0] }
     }
 
     // MARK: - Automatic refresh
@@ -170,6 +244,8 @@ final class AppModel {
         repositories.removeAll { $0.id == id }
         missingRepositoryIDs.remove(id)
         reports[id] = nil
+        baselines[id] = nil
+        updatePendingChanges()
         if selectedRepositoryID == id {
             selectedRepositoryID = repositories.first?.id
         }
@@ -182,6 +258,8 @@ final class AppModel {
         repositories[index].relocate(to: url)
         missingRepositoryIDs.remove(id)
         reports[id] = nil
+        baselines[id] = nil
+        updatePendingChanges()
         persist()
     }
 
@@ -242,4 +320,20 @@ final class AppModel {
     private func persist() {
         store.save(repositories.map(RepositoryStore.entry(for:)))
     }
+}
+
+/// A change waiting for review, with every repository whose scan showed it.
+struct PendingChange: Identifiable, Hashable {
+    let change: ConfigChange
+    let repositoryIDs: [Repository.ID]
+
+    var id: String { change.id }
+}
+
+/// What a change does in one repository.
+struct RepositoryEffect: Identifiable {
+    let repository: Repository
+    let impact: RepositoryImpact
+
+    var id: Repository.ID { repository.id }
 }

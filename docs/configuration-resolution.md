@@ -202,6 +202,32 @@ Strata can't see inside a running session. This is what the Claude Code docs say
 | MCP servers in `~/.claude.json` or `.mcp.json` | Unknown: the docs don't say | [MCP](https://code.claude.com/docs/en/mcp) |
 | Commands in `.claude/commands`, nested, managed and claude.ai skills | Unknown: the docs don't say | [Skills](https://code.claude.com/docs/en/skills) |
 
+### Reviewing a change
+
+The app keeps each repository's first scan of the session as its starting point and lists every change since then in **Review Changes**. A global change shows up in every repository's scan, so it's listed once, with the repositories it reaches (`ChangeImpact`). **Mark All as Reviewed** makes the current scans the new starting point. Starting points live in memory, so the list starts empty at each launch.
+
+To show a diff, each scan keeps a masked copy of what defines each item (`ItemContent`). Masking happens before the copy leaves the scan:
+
+- **Markdown files** (skills, commands, subagents, instruction files): token-shaped strings are masked anywhere. The value is also masked in a `NAME=value` or `NAME: value` line whose name looks sensitive (`token`, `secret`, `password`, `auth`, `key` and similar). A value with spaces is prose and stays.
+- **JSON entries** (MCP servers, settings, plugin records) are compared key by key:
+    - every value under `env` or `headers` is masked
+    - values whose key looks sensitive are masked
+    - credentials in URLs are masked, including database connection strings passed as arguments
+    - secret flags in `args` are masked
+- A value that changed behind the mask is still reported, from a hash of the real value. The hash is never shown.
+
+Security notes restate what the Claude Code docs say the changed field does:
+
+| Change | Note | Source |
+| --- | --- | --- |
+| New or edited MCP server | A new stdio server runs its command when it starts, and a remote one connects to its URL. Command, argument, URL, environment and header edits are each named. Project `.mcp.json` servers ask before first use | [MCP](https://code.claude.com/docs/en/mcp) |
+| `hooks` setting, or `hooks` in a skill or subagent's frontmatter | Hooks run shell commands automatically, with Claude Code's environment | [Hooks](https://code.claude.com/docs/en/hooks) |
+| `permissions` setting | Changes what Claude Code may do without asking. A `defaultMode` of `bypassPermissions` skips every prompt. Claude Code 2.1.257 and later ignore that value in project and local settings | [Permissions](https://code.claude.com/docs/en/permissions), [Settings](https://code.claude.com/docs/en/settings#a-value-you-set-is-ignored) |
+| `apiKeyHelper` setting | A credential helper Claude Code runs | [Settings](https://code.claude.com/docs/en/settings#when-edits-take-effect) |
+| New plugin, or one turned on | Plugins can add skills, subagents, hooks and MCP servers | [Plugins](https://code.claude.com/docs/en/plugins) |
+| `allowed-tools` in a skill or command | Grants the listed tools without asking during the turn that invokes it. A project skill's grant applies even in a folder that isn't trusted | [Skills](https://code.claude.com/docs/en/skills#pre-approve-tools-for-a-skill) |
+| `tools` or `permissionMode` in a subagent | `tools` restricts which tools it can use; `permissionMode` changes how it asks | [Subagents](https://code.claude.com/docs/en/sub-agents#restrict-which-tools-a-subagent-can-use) |
+
 ## Not covered in v0.1
 
 - Anything passed on the command line: `--settings`, `--agents`, `--add-dir`, `--plugin-dir`, `--mcp-config`

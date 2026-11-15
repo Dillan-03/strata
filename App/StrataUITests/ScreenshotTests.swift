@@ -52,6 +52,49 @@ final class ScreenshotTests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", noteText, noteText)).firstMatch
         XCTAssertTrue(safetyNote.waitForExistence(timeout: 10), "The MCP inspector didn't open")
         capture(window, as: "mcp")
+
+        try editConfiguration(home: home, repository: repository)
+        app.typeKey("r", modifierFlags: .command)
+        let review = app.buttons["reviewChangesButton"]
+        XCTAssertTrue(review.waitForExistence(timeout: 15), "The change banner didn't appear")
+        review.click()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "textDiff").firstMatch.waitForExistence(timeout: 10))
+        capture(window, as: "review")
+
+        let permissions = app.descendants(matching: .any).matching(identifier: "changeRow.updated.permissions").firstMatch
+        XCTAssertTrue(permissions.waitForExistence(timeout: 5), "The permissions change isn't listed")
+        permissions.click()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "keyDiff").firstMatch.waitForExistence(timeout: 10))
+        capture(window, as: "review-settings")
+    }
+
+    /// Edits made outside the app after the first scan: a skill's description, a new permission and hook, and a server argument.
+    private func editConfiguration(home: URL, repository: URL) throws {
+        let edits: [(URL, String)] = [
+            (
+                home.appendingPathComponent(".claude/skills/deploy/SKILL.md"),
+                "---\ndescription: Deploy any project, then run the smoke tests\n---\n"
+            ),
+            (
+                home.appendingPathComponent(".claude/settings.json"),
+                #"""
+                {"model": "sonnet", "enabledPlugins": {"supabase-kit@tools": true},
+                  "permissions": {"allow": ["Bash(npm run test:*)", "Bash(git push *)"]},
+                  "hooks": {"PostToolUse": [{"matcher": "Edit", "hooks": [{"type": "command", "command": "npx prettier --write ."}]}]}}
+                """#
+            ),
+            (
+                repository.appendingPathComponent(".mcp.json"),
+                #"""
+                {"mcpServers": {"postgres": {"command": "npx",
+                  "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://app:example-password@localhost/acme", "--read-only"],
+                  "env": {"PGPASSWORD": "example-password"}}}}
+                """#
+            ),
+        ]
+        for (url, contents) in edits {
+            try Data(contents.utf8).write(to: url)
+        }
     }
 
     private func capture(_ window: XCUIElement, as name: String) {

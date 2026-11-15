@@ -128,13 +128,15 @@ struct PluginScanner {
             stage: stage,
             loadTiming: .atLaunch
         )
-        item.fingerprint = Fingerprint.of(json: [
+        let record: [String: Any] = [
             "enabled": enabled.map { $0 as Any } ?? NSNull(),
             "decidedBy": decidedBy?.url.path ?? NSNull(),
             "root": root?.path ?? NSNull(),
             "version": applicable?.version ?? NSNull(),
             "manifest": manifest,
-        ] as [String: Any])
+        ]
+        item.fingerprint = Fingerprint.of(json: record)
+        context.capture(record, for: item.id)
 
         if !installs.isEmpty, !rootExists {
             context.report(Diagnostic(

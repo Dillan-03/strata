@@ -4,6 +4,18 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- **Review Changes**: everything that changed in your Claude Code configuration since you last reviewed it, in one list. Each change shows:
+    - a line diff for Markdown files, or a key-by-key diff for JSON entries, with secrets masked
+    - the repositories it reaches, and whether a repository's own copy overrides it
+    - when a running Claude Code session sees it, with the docs source
+    - conflicts, and security notes for hooks, permissions, MCP servers, plugins and `allowed-tools`
+
+### Fixed
+
+- A password inside a URL passed as an MCP server argument, such as a database connection string, was shown unmasked in the inspector.
+
 ## [0.1.0] - 2026-11-14
 
 First release. Unsigned: builds are ad-hoc signed and not notarised until Developer ID signing is set up ([#22](https://github.com/Dillan-03/strata/issues/22)).

@@ -7,13 +7,23 @@ public struct InspectionReport: Hashable, Codable, Sendable {
     public let items: [ConfigItem]
     public let diagnostics: [Diagnostic]
     public let sources: [ScannedSource]
+    /// What defines each item, masked, for showing changes between scans.
+    public let contents: [ConfigItem.ID: ItemContent]
 
-    public init(repositoryPath: String, scannedAt: Date, items: [ConfigItem], diagnostics: [Diagnostic], sources: [ScannedSource]) {
+    public init(
+        repositoryPath: String,
+        scannedAt: Date,
+        items: [ConfigItem],
+        diagnostics: [Diagnostic],
+        sources: [ScannedSource],
+        contents: [ConfigItem.ID: ItemContent] = [:]
+    ) {
         self.repositoryPath = repositoryPath
         self.scannedAt = scannedAt
         self.items = items
         self.diagnostics = diagnostics
         self.sources = sources
+        self.contents = contents
     }
 
     public func items(of kind: ItemKind) -> [ConfigItem] {
