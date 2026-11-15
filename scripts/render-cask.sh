@@ -8,7 +8,7 @@ trap 'echo "::error title=${BASH_SOURCE[0]##*/}::Failed at line $LINENO: $BASH_C
 version="${1:?usage: render-cask.sh <version> <sha256> [url]}"
 sha256="${2:?usage: render-cask.sh <version> <sha256> [url]}"
 # Single-quoted so Ruby's #{version} interpolation survives; inside ${3:-...} its braces would end the expansion early.
-default_url='https://github.com/Dillan-03/verbose-octo-carnival/releases/download/v#{version}/Strata-#{version}.zip'
+default_url='https://github.com/Dillan-03/strata/releases/download/v#{version}/Strata-#{version}.zip'
 url="${3:-$default_url}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 

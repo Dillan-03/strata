@@ -7,7 +7,7 @@ Strata ships as a zipped universal (Apple silicon and Intel) `Strata.app` attach
 This repository is its own tap, so no separate `homebrew-*` repository is needed.
 
 ```bash
-brew tap dillan-03/strata https://github.com/Dillan-03/verbose-octo-carnival
+brew tap dillan-03/strata https://github.com/Dillan-03/strata
 brew install --cask dillan-03/strata/strata-inspector
 ```
 
@@ -45,7 +45,7 @@ Release notes always say which kind of build a release is.
   xattr -dr com.apple.quarantine /Applications/Strata.app
   ```
 
-Builds stay unsigned until the Apple credentials in [#22](https://github.com/Dillan-03/verbose-octo-carnival/issues/22) are added as repository secrets.
+Builds stay unsigned until the Apple credentials in [#22](https://github.com/Dillan-03/strata/issues/22) are added as repository secrets.
 
 ## Verifying a download
 

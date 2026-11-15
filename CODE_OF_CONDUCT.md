@@ -11,7 +11,7 @@ This project follows the spirit of the [Contributor Covenant, version 2.1](https
 
 ## Reporting
 
-Report unacceptable behaviour privately through a [GitHub security advisory](https://github.com/Dillan-03/verbose-octo-carnival/security/advisories/new) or by contacting the maintainer through their GitHub profile. Reports are handled confidentially.
+Report unacceptable behaviour privately through a [GitHub security advisory](https://github.com/Dillan-03/strata/security/advisories/new) or by contacting the maintainer through their GitHub profile. Reports are handled confidentially.
 
 ## Enforcement
 

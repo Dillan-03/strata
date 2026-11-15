@@ -52,7 +52,7 @@ With `publish` checked, a manual run publishes the existing tag `v<version>`. It
 
 If any are missing it ad-hoc signs, emits a workflow warning, and records `unsigned`, so the release is labelled honestly. If they're present but wrong, the job fails rather than publishing. The certificate goes into a temporary keychain that is deleted when the step ends, and no secret value is ever echoed.
 
-Setup steps are in [#22](https://github.com/Dillan-03/verbose-octo-carnival/issues/22). To confirm the secrets work, run a dry run and check that the Sign and notarise step logs `Signed, notarised and stapled.`.
+Setup steps are in [#22](https://github.com/Dillan-03/strata/issues/22). To confirm the secrets work, run a dry run and check that the Sign and notarise step logs `Signed, notarised and stapled.`.
 
 ## Scripts
 

@@ -11,11 +11,11 @@ It's for questions like *"Why isn't my repo's `/deploy` skill running?"* (a pers
 
 Strata is read-only. It never edits Claude Code configuration, runs MCP servers, or makes network requests.
 
-![Strata's inspector for a /deploy skill: the global copy runs and the repository's copy is overridden](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/inspector.png)
+![Strata's inspector for a /deploy skill: the global copy runs and the repository's copy is overridden](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/inspector.png)
 
 | Issues | An MCP server awaiting approval |
 | --- | --- |
-| ![The issues list, led by a global skill hiding the repository's copy](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/issues.png) | ![An MCP server from .mcp.json, shown as Conditional until approved, with Strata's note that it never runs servers](https://raw.githubusercontent.com/Dillan-03/verbose-octo-carnival/screenshots/mcp.png) |
+| ![The issues list, led by a global skill hiding the repository's copy](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/issues.png) | ![An MCP server from .mcp.json, shown as Conditional until approved, with Strata's note that it never runs servers](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/mcp.png) |
 
 Screenshots are captured from the real app by CI whenever the app changes on `main`, using made-up configuration.
 
@@ -27,14 +27,14 @@ Screenshots are captured from the real app by CI whenever the app changes on `ma
 ## Install
 
 ```bash
-brew tap dillan-03/strata https://github.com/Dillan-03/verbose-octo-carnival
+brew tap dillan-03/strata https://github.com/Dillan-03/strata
 brew install --cask dillan-03/strata/strata-inspector
 ```
 
-Or download `Strata-<version>.zip` from [Releases](https://github.com/Dillan-03/verbose-octo-carnival/releases), unzip it, and move `Strata.app` to Applications.
+Or download `Strata-<version>.zip` from [Releases](https://github.com/Dillan-03/strata/releases), unzip it, and move `Strata.app` to Applications.
 
 > [!IMPORTANT]
-> Until Developer ID signing is set up ([#22](https://github.com/Dillan-03/verbose-octo-carnival/issues/22)), releases are **unsigned pre-releases**, and macOS blocks the first launch. Right-click Strata in Finder and choose **Open**, or run `xattr -dr com.apple.quarantine /Applications/Strata.app`. Each release's notes say whether that build is signed.
+> Until Developer ID signing is set up ([#22](https://github.com/Dillan-03/strata/issues/22)), releases are **unsigned pre-releases**, and macOS blocks the first launch. Right-click Strata in Finder and choose **Open**, or run `xattr -dr com.apple.quarantine /Applications/Strata.app`. Each release's notes say whether that build is signed.
 
 | Task | Command |
 | --- | --- |
@@ -81,9 +81,8 @@ These need the repository owner and can't be done by automation. Each issue has 
 
 | Issue | What | Blocks |
 | --- | --- | --- |
-| [#21](https://github.com/Dillan-03/verbose-octo-carnival/issues/21) | Branch protection and repository settings, including letting Actions open PRs | Enforced CI on `main`; the automatic cask PR after a release |
-| [#22](https://github.com/Dillan-03/verbose-octo-carnival/issues/22) | Apple Developer ID certificate and App Store Connect API key as repository secrets | Signed, notarised releases |
-| [#23](https://github.com/Dillan-03/verbose-octo-carnival/issues/23) | Rename the repository to match the app | Nothing; links redirect |
+| [#21](https://github.com/Dillan-03/strata/issues/21) | Branch protection and repository settings, including letting Actions open PRs | Enforced CI on `main`; the automatic cask PR after a release |
+| [#22](https://github.com/Dillan-03/strata/issues/22) | Apple Developer ID certificate and App Store Connect API key as repository secrets | Signed, notarised releases |
 
 ## Development
 
