@@ -37,8 +37,8 @@ brew install --cask dillan-03/strata/strata-inspector
 
 Or download `Strata-<version>.zip` from [Releases](https://github.com/Dillan-03/strata/releases), unzip it, and move `Strata.app` to Applications.
 
-> [!IMPORTANT]
-> Until Developer ID signing is set up ([#22](https://github.com/Dillan-03/strata/issues/22)), releases are **unsigned pre-releases**, and macOS blocks the first launch. Right-click Strata in Finder and choose **Open**, or run `xattr -dr com.apple.quarantine /Applications/Strata.app`. Each release's notes say whether that build is signed.
+> [!NOTE]
+> From 0.2.0, releases are signed with a Developer ID certificate and notarised by Apple, so Strata opens normally. 0.1.0 was an unsigned pre-release that macOS blocks at first launch. If you have it, `brew upgrade --cask strata-inspector` replaces it. Each release's notes say whether that build is signed.
 
 | Task | Command |
 | --- | --- |

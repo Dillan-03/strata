@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-16
+
+The first signed release, with change tracking: see what changed in your Claude Code configuration since you last looked, and fix overridden copies.
+
 ### Added
 
 - **Review Changes**: everything that changed in your Claude Code configuration since you last reviewed it, in one list. Each change shows:
@@ -32,6 +36,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
     - each change is announced once until you review it
     - clicking a notification opens Review Changes
     - you can pause them for an hour or until tomorrow, or silence one repository from its menu in the sidebar
+
+### Changed
+
+- Releases are signed with a Developer ID certificate and notarised by Apple, so Strata opens normally after a Homebrew install. 0.1.0 was unsigned: if you installed it, `brew upgrade --cask strata-inspector` replaces it.
 
 ### Fixed
 
@@ -62,4 +70,5 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
+[0.2.0]: https://github.com/Dillan-03/strata/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Dillan-03/strata/releases/tag/v0.1.0
