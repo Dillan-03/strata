@@ -1,7 +1,8 @@
 name: Release
 
 on:
-  # Every push to main is checked. Only one that leaves MARKETING_VERSION untagged releases anything.
+  # Every push to main is checked. Only one that leaves MARKETING_VERSION unreleased releases anything: in practice,
+  # merging the release PR that release-pr.yml keeps open.
   push:
     branches: [main]
   pull_request:
@@ -58,13 +59,14 @@ jobs:
           case "$GITHUB_EVENT_NAME" in
             push)
               version="$declared"
-              if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+              # Asks for the release, not the tag: a tag left by a failed run would otherwise skip the release silently.
+              if gh release view "v$version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
                 run=false
                 publish=false
                 echo "::notice title=Release::v$version is already released, so this push doesn't release anything."
               else
                 publish=true
-                echo "::notice title=Release::MARKETING_VERSION is $version and v$version isn't tagged yet, so this push releases it."
+                echo "::notice title=Release::MARKETING_VERSION is $version and v$version isn't released yet, so this push releases it."
               fi
               ;;
             workflow_dispatch) version="$INPUT_VERSION"; publish="$INPUT_PUBLISH" ;;
@@ -83,13 +85,13 @@ jobs:
               echo "::error::$GITHUB_SHA isn't on main. Only merged commits are released."
               exit 1
             fi
-            tagged=$(git rev-list -n 1 "refs/tags/v$version" 2>/dev/null || true)
-            if [ -n "$tagged" ] && [ "$tagged" != "$GITHUB_SHA" ]; then
-              echo "::error::v$version is already tagged on $tagged, not $GITHUB_SHA. Bump MARKETING_VERSION for a new release."
-              exit 1
-            fi
             if gh release view "v$version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               echo "::error::v$version is already published."
+              exit 1
+            fi
+            tagged=$(git rev-list -n 1 "refs/tags/v$version" 2>/dev/null || true)
+            if [ -n "$tagged" ] && [ "$tagged" != "$GITHUB_SHA" ]; then
+              echo "::error::v$version is tagged on $tagged, not $GITHUB_SHA, and has no release. Delete the leftover tag with 'git push origin :refs/tags/v$version', then re-run."
               exit 1
             fi
             scripts/next-version.py --check "$version"
@@ -229,6 +231,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # Starts CI on the cask PR.
+      actions: write
     env:
       VERSION: ${{ needs.plan.outputs.version }}
     steps:
@@ -273,9 +277,7 @@ jobs:
 
       - name: Open cask update pull request
         env:
-          # With the owner's token (#78) the PR runs CI and merges itself. PRs opened with the workflow token don't trigger CI.
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
-          HAS_RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           sha=$(awk '{print $1}' "dist/Strata-$VERSION.zip.sha256")
           branch="chore/cask-v$VERSION"
@@ -289,21 +291,12 @@ jobs:
           git add Casks/strata-inspector.rb
           git commit -m "[Chore] Update Homebrew cask to $VERSION"
           git push origin "$branch"
-          body="Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow."
-          if [ "$HAS_RELEASE_TOKEN" = "true" ]; then
-            body="$body It merges itself once CI passes."
-          else
-            body="$body Pull requests opened with the workflow token don't trigger CI, so close and reopen this one to run checks before merging. Adding \`RELEASE_TOKEN\` (#78) removes this step."
-          fi
+          body="Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow. Merge it once CI passes so Homebrew users get v$VERSION."
           # The release is already published, so a PR that can't be opened is a warning with a manual next step, not a failure.
           if ! gh pr create --base main --head "$branch" --title "[Chore] Update Homebrew cask to $VERSION" --body "$body"; then
             echo "::warning title=Cask PR not opened::Branch $branch is pushed with the updated cask, but the pull request couldn't be opened. Open one from $branch to main by hand."
             exit 0
           fi
-          if [ "$HAS_RELEASE_TOKEN" != "true" ]; then
-            echo "::warning title=Cask PR needs a nudge::Close and reopen the cask PR so CI runs, then merge it. Adding RELEASE_TOKEN (#78) automates this."
-          elif gh pr merge "$branch" --auto --squash; then
-            echo "::notice title=Cask PR::Opened, and set to merge itself once CI passes."
-          else
-            echo "::warning title=Cask PR not set to auto-merge::Allow auto-merge under Settings → General (#78), or merge the cask PR once it's green."
-          fi
+          # Events from the workflow token don't start other workflows, except workflow_dispatch. Its checks count as the PR's.
+          gh workflow run ci.yml --ref "$branch"
+          echo "::notice title=Cask PR::Opened and CI started. Merge it once it's green."

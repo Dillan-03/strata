@@ -5,6 +5,8 @@ Usage:
   scripts/next-version.py [--changelog PATH]              print the version the Unreleased entries call for
   scripts/next-version.py [--changelog PATH] --check X.Y.Z  fail unless X.Y.Z is the newest release and matches its entries
 
+Exits 1 on a changelog error, and 3 when Unreleased has nothing to release.
+
 Rules (semantic versioning):
   major  a "**Breaking:**" entry, or a "### Removed" section
   minor  "### Added", "### Changed" or "### Deprecated"
@@ -41,6 +43,10 @@ VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
 
 class ChangelogError(Exception):
+    pass
+
+
+class NothingToRelease(ChangelogError):
     pass
 
 
@@ -115,8 +121,8 @@ def next_version(sections: list[Section]) -> tuple[str, str]:
     pending = unreleased(sections)
     found = pending.bump_level() if pending else None
     if found is None:
-        raise ChangelogError("Nothing to release: the Unreleased section has no entries under Added, Changed, "
-                             "Deprecated, Removed, Fixed or Security.")
+        raise NothingToRelease("Nothing to release: the Unreleased section has no entries under Added, Changed, "
+                               "Deprecated, Removed, Fixed or Security.")
     released = releases(sections)
     if not released:
         raise ChangelogError("There's no released version in the changelog to bump from.")
@@ -167,6 +173,9 @@ def main() -> int:
             version, reason = next_version(sections)
             print(reason, file=sys.stderr)
             print(version)
+    except NothingToRelease as error:
+        print(error, file=sys.stderr)
+        return 3
     except (ChangelogError, OSError) as error:
         print(f"::error title=Version check::{error}")
         return 1

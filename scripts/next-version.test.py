@@ -148,6 +148,11 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual((result.returncode, result.stdout), (0, "0.2.0\n"))
         self.assertIn("minor bump", result.stderr)
 
+    def test_nothing_to_release_is_exit_3_with_nothing_on_stdout(self):
+        result = self.run_script(upcoming(""))
+        self.assertEqual((result.returncode, result.stdout), (3, ""))
+        self.assertIn("Nothing to release", result.stderr)
+
     def test_check_failure_is_an_annotation_and_exit_1(self):
         text = changelog("", ("0.1.1", "### Added\n\n- A feature."), ("0.1.0", "### Added\n\n- First."))
         result = self.run_script(text, "--check", "0.1.1")
