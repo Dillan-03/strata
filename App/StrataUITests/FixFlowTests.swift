@@ -26,8 +26,10 @@ final class FixFlowTests: XCTestCase {
         try Data("---\ndescription: Repo deploy\n---\n".utf8).write(to: repoCopy)
 
         let app = XCUIApplication()
-        // Fixes are off by default; the argument domain turns them on for this run only.
-        app.launchArguments = ["-StrataUITesting", "-allowsFixes", "YES"]
+        // Fixes are off by default; the argument domain turns them on for this run only. The `-key value` pair goes
+        // first: after a bare flag, macOS reads the key as the flag's value and the stray YES as a file to open,
+        // and an app asked to open a file skips its default window.
+        app.launchArguments = ["-allowsFixes", "YES", "-StrataUITesting"]
         app.launchEnvironment = [
             "STRATA_UITEST_REPOSITORY": repository.path,
             "STRATA_UITEST_HOME": home.path,

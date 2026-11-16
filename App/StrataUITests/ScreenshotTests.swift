@@ -18,7 +18,7 @@ final class ScreenshotTests: XCTestCase {
         let (home, repository) = try makeFixture()
 
         let app = XCUIApplication()
-        app.launchArguments = ["-StrataUITesting", "-allowsFixes", "YES"]
+        app.launchArguments = ["-allowsFixes", "YES", "-StrataUITesting"]
         app.launchEnvironment = [
             "STRATA_UITEST_REPOSITORY": repository.path,
             "STRATA_UITEST_HOME": home.path,
