@@ -49,15 +49,26 @@ jobs:
       - name: Version script tests
         run: python3 scripts/next-version.test.py
 
-      # A pull request that leaves MARKETING_VERSION untagged releases that version when it merges, so check it now.
+      # Says what merging this releases: the version the Unreleased entries call for, or nothing.
       - name: Release check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          version=$(grep -E '^\s+MARKETING_VERSION:' App/project.yml | head -1 | awk '{print $2}')
-          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
-            echo "::notice title=Release check::v$version is already released, so merging this doesn't release anything."
-          else
+          status=0
+          version=$(scripts/next-version.py) || status=$?
+          if [ "$status" -eq 0 ]; then
             echo "::notice title=Release check::Merging this releases $version."
-            scripts/next-version.py --check "$version"
+          elif [ "$status" -eq 3 ]; then
+            version=$(grep -E '^\s+MARKETING_VERSION:' App/project.yml | head -1 | awk '{print $2}')
+            if gh release view "v$version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "::notice title=Release check::Unreleased is empty, so merging this doesn't release anything."
+            else
+              echo "::notice title=Release check::v$version isn't released yet, so merging this releases it."
+              scripts/next-version.py --check "$version"
+            fi
+          else
+            echo "$version"
+            exit 1
           fi
 
   core:

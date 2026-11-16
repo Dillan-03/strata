@@ -14,40 +14,53 @@ Strata follows [semantic versioning](https://semver.org/), and `CHANGELOG.md` de
 
 The biggest bump wins. While the version is 0.x, a breaking change bumps the minor number instead, and 1.0.0 can follow any 0.x release when Strata is ready to promise stability. `### Known limitations` describes a release without changing its number. Any other heading is rejected, so a typo can't under-bump a release. Release tooling, CI and docs-only changes don't need an entry.
 
-`scripts/next-version.py` prints the version the Unreleased entries call for. At release time, `scripts/next-version.py --check <version>` refuses a tag that doesn't match, or one cut while Unreleased still has entries.
+`scripts/next-version.py` prints the version the Unreleased entries call for, or exits 3 when there's nothing to release. `scripts/next-version.py --check <version>` refuses a release that doesn't match its entries, or one cut while Unreleased still has entries.
 
 ## Cutting a release
 
-Merging a release PR is the whole release. Nobody pushes tags.
+Merging a PR with changelog entries is the whole release. Nobody bumps versions or pushes tags.
 
-1. Run `scripts/next-version.py` to get the version. Open a PR that:
-   - sets `MARKETING_VERSION` to it in `App/project.yml`, and bumps `CURRENT_PROJECT_VERSION`
-   - moves the `Unreleased` entries in `CHANGELOG.md` under `## [<version>] - <date>`
-
-   CI's **Release check** annotates the PR with "Merging this releases <version>". It fails if the changelog doesn't match.
+1. Add the change's line under `## [Unreleased]` in its PR. CI's **Release check** annotates the PR with "Merging this releases <version>", or says it releases nothing.
 2. Merge it once CI is green. The push to `main` starts `.github/workflows/release.yml`, which runs these jobs in order. Each starts only if the one before it passed.
-   - **Plan** (Linux): sees that `v<version>` isn't tagged yet, so this push is a release. It checks:
+   - **Plan** (Linux): picks the version `scripts/next-version.py` calls for. If Unreleased is empty, there's no release unless `MARKETING_VERSION` itself isn't released yet (a run that failed after committing its version), so Plan stops the run here. It checks:
      - the commit is on `main`
      - the version isn't already published
-     - the changelog calls for this version
-
-     On any other push to `main` the version is already tagged, so Plan stops the run here.
+     - no leftover tag claims the version. A tag without a release fails the run with the command to delete it.
    - **CI**: all of `ci.yml` on the merged commit (lint, core tests on Linux, then app and UI tests on macOS 15)
-   - **build** (macOS 15, read-only token): builds a universal Release app, signs and notarises it (or ad-hoc signs it), then zips it and uploads the zip as an artifact
+   - **Commit version** (Linux, deploy key): sets `MARKETING_VERSION`, bumps `CURRENT_PROJECT_VERSION`, moves the Unreleased entries under `## [<version>] - <date>` with a release link, checks the result with `next-version.py --check`, and pushes `[Chore] Release <version> [skip ci]` to `main`. If another merge landed since the run started, the push is refused and the run for that newer push releases everything.
+   - **build** (macOS 15, read-only token): builds a universal Release app from the version commit, signs and notarises it (or ad-hoc signs it), then zips it and uploads the zip as an artifact
    - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip
-   - **publish** (Linux, write token):
-     - creates the GitHub Release and its `v<version>` tag on the merged commit. It's a pre-release when unsigned.
-     - opens a `[Chore] Update Homebrew cask to <version>` PR
-3. The cask PR:
-   - **With `RELEASE_TOKEN` ([#78](https://github.com/Dillan-03/strata/issues/78)):** opened with your token, so CI runs on it and it merges itself once green.
-   - **Without it:** opened with the workflow token, which doesn't trigger CI. Close and reopen it, then merge it once green.
-4. Check the release:
+   - **publish** (Linux, write token and deploy key):
+     - creates the GitHub Release and its `v<version>` tag on the version commit. It's a pre-release when unsigned.
+     - pushes `[Chore] Update Homebrew cask to <version> [skip ci]` to `main`
+3. Check the release:
 
    ```bash
    brew update && brew upgrade --cask strata-inspector
    ```
 
-If a job fails, nothing is published and no tag is created. Fix the cause, then go to **Actions → Release → Run workflow** on `main`, with the version and `publish` ticked, to retry.
+Release tooling, CI and docs-only changes have no changelog entry, so merging them releases nothing.
+
+If a job fails before **Commit version**, `main` is unchanged: fix the cause and merge the fix. If one fails after it, `main` already has the version commit. Fix the cause, then use **Re-run failed jobs** on the run, or **Actions → Release → Run workflow** on `main` with the version and `publish` ticked.
+
+## Deploy key
+
+The `main` ruleset requires a pull request for every change. The version and cask commits come from the workflow, so they're pushed with a deploy key that the ruleset lets bypass. Nothing else uses it.
+
+- The **Release workflow** deploy key (Settings → Deploy keys) has write access.
+- Its private half is the `RELEASE_DEPLOY_KEY` repository secret.
+- The `main` ruleset lists **Deploy keys** as a bypass actor.
+
+To rotate it:
+
+```bash
+ssh-keygen -t ed25519 -N '' -C "strata release workflow" -f release-key
+gh repo deploy-key add release-key.pub --allow-write --title "Release workflow"
+gh secret set RELEASE_DEPLOY_KEY < release-key
+rm release-key release-key.pub
+```
+
+Then delete the old key under Settings → Deploy keys.
 
 ## Dry runs
 
@@ -79,7 +92,7 @@ Setup steps are in [#22](https://github.com/Dillan-03/strata/issues/22). To conf
 | --- | --- |
 | `scripts/build-release.sh` | Generates the project and builds a universal Release app to `build/Release/Strata.app` |
 | `scripts/sign-and-notarize.sh` | Developer ID signing and notarisation, or an ad-hoc fallback |
-| `scripts/next-version.py [--check <version>]` | Prints the next version from the changelog, or checks a release version against it (Plan and CI's Release check) |
+| `scripts/next-version.py [--check <version>]` | Prints the next version from the changelog, or checks a release version against it (Plan, Commit version and CI's Release check) |
 | `scripts/package-release.sh <version>` | Zips the app to `dist/` with a `.sha256` file and checks the version |
 | `scripts/smoke-test-app.sh <app>` | Launches the app headlessly and checks it stays up |
 | `scripts/render-cask.sh <version> <sha256> [url]` | Writes the cask from `packaging/strata-inspector.rb.template` |
@@ -87,4 +100,4 @@ Setup steps are in [#22](https://github.com/Dillan-03/strata/issues/22). To conf
 
 ## Rolling back
 
-Delete the GitHub Release, revert the cask PR, then cut a new patch version. Never re-tag an existing version. Homebrew users may have already installed it, and the checksum in their cask would stop matching.
+Delete the GitHub Release, revert the cask commit in a PR, then merge the fix with a `### Fixed` entry so the pipeline releases a new patch version. Never re-tag an existing version. Homebrew users may have already installed it, and the checksum in their cask would stop matching.

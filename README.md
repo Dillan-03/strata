@@ -85,7 +85,7 @@ These need the repository owner and can't be done by automation. Each issue has 
 
 | Issue | What | Blocks |
 | --- | --- | --- |
-| [#21](https://github.com/Dillan-03/strata/issues/21) | Branch protection and repository settings, including letting Actions open PRs | Enforced CI on `main`; the automatic cask PR after a release |
+| [#21](https://github.com/Dillan-03/strata/issues/21) | Branch protection and repository settings | Enforced CI on `main` |
 | [#22](https://github.com/Dillan-03/strata/issues/22) | Apple Developer ID certificate and App Store Connect API key as repository secrets | Signed, notarised releases |
 
 ## Development
