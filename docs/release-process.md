@@ -39,8 +39,10 @@ Merging a release PR is the whole release. Nobody pushes tags.
      - creates the GitHub Release and its `v<version>` tag on the merged commit. It's a pre-release when unsigned.
      - opens a `[Chore] Update Homebrew cask to <version>` PR
 3. The cask PR:
-   - **With `RELEASE_TOKEN` ([#78](https://github.com/Dillan-03/strata/issues/78)):** opened with your token, so CI runs on it and it merges itself once green.
-   - **Without it:** opened with the workflow token, which doesn't trigger CI. Close and reopen it, then merge it once green.
+   - **With `RELEASE_TOKEN` ([#78](https://github.com/Dillan-03/strata/issues/78)):** opened with your token, so CI runs on it straight away.
+   - **Without it:** opened with the workflow token, which doesn't trigger CI. Close and reopen it so CI runs.
+
+   Either way it never merges itself. The code owner merges it once it's green.
 4. Check the release:
 
    ```bash

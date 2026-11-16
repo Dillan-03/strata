@@ -273,7 +273,8 @@ jobs:
 
       - name: Open cask update pull request
         env:
-          # With the owner's token (#78) the PR runs CI and merges itself. PRs opened with the workflow token don't trigger CI.
+          # With the owner's token (#78) CI runs on the PR. PRs opened with the workflow token don't trigger CI.
+          # It never merges itself: the code owner approves and merges it.
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
           HAS_RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
         run: |
@@ -291,7 +292,7 @@ jobs:
           git push origin "$branch"
           body="Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow."
           if [ "$HAS_RELEASE_TOKEN" = "true" ]; then
-            body="$body It merges itself once CI passes."
+            body="$body CI runs on it. Merge it once it's green."
           else
             body="$body Pull requests opened with the workflow token don't trigger CI, so close and reopen this one to run checks before merging. Adding \`RELEASE_TOKEN\` (#78) removes this step."
           fi
@@ -300,10 +301,8 @@ jobs:
             echo "::warning title=Cask PR not opened::Branch $branch is pushed with the updated cask, but the pull request couldn't be opened. Open one from $branch to main by hand."
             exit 0
           fi
-          if [ "$HAS_RELEASE_TOKEN" != "true" ]; then
-            echo "::warning title=Cask PR needs a nudge::Close and reopen the cask PR so CI runs, then merge it. Adding RELEASE_TOKEN (#78) automates this."
-          elif gh pr merge "$branch" --auto --squash; then
-            echo "::notice title=Cask PR::Opened, and set to merge itself once CI passes."
+          if [ "$HAS_RELEASE_TOKEN" = "true" ]; then
+            echo "::notice title=Cask PR::Opened. CI is running on it. Merge it once it's green."
           else
-            echo "::warning title=Cask PR not set to auto-merge::Allow auto-merge under Settings → General (#78), or merge the cask PR once it's green."
+            echo "::warning title=Cask PR needs a nudge::Close and reopen the cask PR so CI runs, then merge it once it's green. Adding RELEASE_TOKEN (#78) makes CI start by itself."
           fi

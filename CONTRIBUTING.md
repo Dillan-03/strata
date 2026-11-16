@@ -17,7 +17,7 @@ Thanks for helping. Strata is a small macOS tool that's read-only by default, an
 4. If users will notice the change, add a line under `## [Unreleased]` in `CHANGELOG.md`, under `### Added`, `### Changed`, `### Deprecated`, `### Removed`, `### Fixed` or `### Security`. Start a breaking change with `**Breaking:**`. These headings decide the next version number; see [docs/release-process.md](docs/release-process.md#versioning).
 5. Open a PR using the template, with `Closes #<issue>`.
 6. Wait for CI to pass. Fix the root cause of failures rather than retrying.
-7. Squash merge. The issue closes when the PR merges.
+7. The code owner squash-merges it once CI passes. Nothing merges automatically, including the release workflow's cask PRs. The issue closes when the PR merges.
 
 ## Local setup
 
