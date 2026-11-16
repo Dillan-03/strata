@@ -66,6 +66,13 @@ final class ScreenshotTests: XCTestCase {
         permissions.click()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "keyDiff").firstMatch.waitForExistence(timeout: 10))
         capture(window, as: "review-settings")
+
+        app.descendants(matching: .any).matching(identifier: "changeRow.updated.deploy").firstMatch.click()
+        let showPrompt = app.buttons["togglePromptButton"]
+        XCTAssertTrue(showPrompt.waitForExistence(timeout: 5), "The prompt section isn't there")
+        showPrompt.click()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "promptText").firstMatch.waitForExistence(timeout: 5))
+        capture(window, as: "review-prompt")
     }
 
     /// Edits made outside the app after the first scan: a skill's description, a new permission and hook, and a server argument.

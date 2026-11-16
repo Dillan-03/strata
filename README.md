@@ -9,7 +9,7 @@ Strata is a native macOS app that shows where your Claude Code configuration com
 
 It's for questions like *"Why isn't my repo's `/deploy` skill running?"* (a personal one with the same name wins) or *"Which `.mcp.json` server needs approval?"*.
 
-When configuration changes on disk, from any editor or a `git checkout`, **Review Changes** shows what changed since you last looked. It shows each change as a diff with secrets masked. It also shows the repositories each change reaches, and whether a running Claude Code session picks it up.
+When configuration changes on disk, from any editor or a `git checkout`, **Review Changes** shows what changed since you last looked. It shows each change as a diff with secrets masked. It also shows the repositories each change reaches, and whether a running Claude Code session picks it up. One click copies a prompt you can paste into that session so it knows what changed.
 
 Strata is read-only. It never edits Claude Code configuration, runs MCP servers, or makes network requests.
 

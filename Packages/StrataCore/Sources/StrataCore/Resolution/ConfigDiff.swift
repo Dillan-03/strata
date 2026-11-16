@@ -150,6 +150,15 @@ public struct KeyChange: Hashable, Sendable, Identifiable {
             order.insert(value.path, at: neighbour.map { $0 + 1 } ?? (index == 0 ? 0 : order.count))
         }
 
+        // An object that became empty, or was empty and filled up, appears as a lone `{}` next to its own keys.
+        // The keys tell the story, so the placeholder is dropped.
+        let paths = order
+        order.removeAll { path in
+            let lone = [oldByPath[path], newByPath[path]].compactMap { $0 }
+            guard lone.count == 1, ["{}", "[]"].contains(lone[0].display) else { return false }
+            return paths.contains { $0.hasPrefix(path + ".") || $0.hasPrefix(path + "[") }
+        }
+
         return order.map { path in
             let was = oldByPath[path]
             let now = newByPath[path]

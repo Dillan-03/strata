@@ -216,6 +216,16 @@ To show a diff, each scan keeps a masked copy of what defines each item (`ItemCo
     - secret flags in `args` are masked
 - A value that changed behind the mask is still reported, from a hash of the real value. The hash is never shown.
 
+**Copy Prompt for Claude Code** turns a change into a message for the session you have open (`UpdatePrompt`). It covers:
+
+- what changed, where, its scope and the repositories it reaches
+- the diff, up to 60 lines, built from the masked copies and checked once more for token-shaped text
+- conflicts
+- when Claude Code sees the change
+- steps that fit the kind of item: use the current skill and read it back, list the server's tools, re-read the instruction file, stop using a removed plugin
+
+When the session won't pick the change up by itself, the sheet says what to run first (`/reload-skills`, `/reload-plugins`, or a new session). The prompt only goes to the clipboard; Strata never sends it.
+
 Security notes restate what the Claude Code docs say the changed field does:
 
 | Change | Note | Source |

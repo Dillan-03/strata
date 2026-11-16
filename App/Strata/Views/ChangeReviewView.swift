@@ -1,3 +1,4 @@
+import AppKit
 import StrataCore
 import SwiftUI
 
@@ -215,6 +216,9 @@ private struct ChangeDetail: View {
                     .accessibilityIdentifier("securityNotes")
                 }
                 section(diffTitle(diff)) { DiffView(diff: diff) }
+                section("Prompt for Claude Code") {
+                    PromptPreview(prompt: model.updatePrompt(for: pending), beforePasting: UpdatePrompt.beforePasting(change))
+                }
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -234,15 +238,18 @@ private struct ChangeDetail: View {
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
-            if change.kind != .deleted {
-                HStack(spacing: 12) {
-                    Button("Reveal in Finder") { model.revealInFinder(change.item.source.url) }
-                    Button("Open") { model.open(change.item.source.url) }
+            HStack(spacing: 12) {
+                CopyPromptButton(prompt: model.updatePrompt(for: pending))
+                if change.kind != .deleted {
+                    Group {
+                        Button("Reveal in Finder") { model.revealInFinder(change.item.source.url) }
+                        Button("Open") { model.open(change.item.source.url) }
+                    }
+                    .buttonStyle(.link)
                 }
-                .buttonStyle(.link)
-                .font(.callout)
-                .padding(.top, 2)
             }
+            .font(.callout)
+            .padding(.top, 4)
         }
     }
 
@@ -309,6 +316,62 @@ private struct ChangeDetail: View {
             Text(title)
                 .font(.headline)
             content()
+        }
+    }
+}
+
+/// Copies the update prompt. It only ever goes to the clipboard: pasting it into Claude Code is the user's move.
+private struct CopyPromptButton: View {
+    let prompt: String
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(prompt, forType: .string)
+            copied = true
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                copied = false
+            }
+        } label: {
+            Label(copied ? "Copied" : "Copy Prompt for Claude Code", systemImage: copied ? "checkmark" : "doc.on.doc")
+        }
+        .help("Copy a message that tells a running Claude Code session about this change")
+        .accessibilityIdentifier("copyPromptButton")
+    }
+}
+
+private struct PromptPreview: View {
+    let prompt: String
+    let beforePasting: String?
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Paste it into the Claude Code session you have open, so it knows what changed. Strata never sends it anywhere.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let beforePasting {
+                Label(beforePasting, systemImage: "arrow.clockwise")
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 12) {
+                CopyPromptButton(prompt: prompt)
+                Button(isExpanded ? "Hide the Prompt" : "Show the Prompt") { isExpanded.toggle() }
+                    .buttonStyle(.link)
+                    .accessibilityIdentifier("togglePromptButton")
+            }
+            if isExpanded {
+                Text(prompt)
+                    .font(.callout.monospaced())
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                    .accessibilityIdentifier("promptText")
+            }
         }
     }
 }

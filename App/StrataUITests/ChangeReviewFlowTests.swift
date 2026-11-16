@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 
 /// Edits a global skill outside the app, then reviews the change: banner, sheet, diff, and marking it reviewed.
@@ -45,6 +46,12 @@ final class ChangeReviewFlowTests: XCTestCase {
         let removed = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "description: Deploy anything")).firstMatch
         XCTAssertTrue(removed.exists, "The diff doesn't show the old line")
+
+        NSPasteboard.general.clearContents()
+        app.buttons.matching(identifier: "copyPromptButton").firstMatch.click()
+        let copied = NSPasteboard.general.string(forType: .string) ?? ""
+        XCTAssertTrue(copied.contains("+description: Deploy, then smoke test"), "The copied prompt is missing the change:\n\(copied)")
+        XCTAssertTrue(copied.contains("Please:"), "The copied prompt is missing its steps")
 
         app.buttons["markReviewedButton"].click()
         XCTAssertTrue(review.waitForNonExistence(timeout: 10), "The banner should go once changes are reviewed")
