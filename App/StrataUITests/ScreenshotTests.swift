@@ -68,7 +68,8 @@ final class ScreenshotTests: XCTestCase {
         capture(window, as: "review-settings")
 
         app.descendants(matching: .any).matching(identifier: "changeRow.updated.deploy").firstMatch.click()
-        let showPrompt = app.buttons["togglePromptButton"]
+        // Link-style buttons aren't reported as buttons on macOS, so match by identifier alone.
+        let showPrompt = app.descendants(matching: .any).matching(identifier: "togglePromptButton").firstMatch
         XCTAssertTrue(showPrompt.waitForExistence(timeout: 5), "The prompt section isn't there")
         showPrompt.click()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "promptText").firstMatch.waitForExistence(timeout: 5))
