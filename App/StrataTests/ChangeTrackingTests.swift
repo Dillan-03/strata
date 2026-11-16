@@ -130,6 +130,52 @@ final class ChangeTrackingTests: XCTestCase {
         XCTAssertTrue(model.conflicts(for: pending).contains { $0.code == .shadowedDefinition })
     }
 
+    // MARK: - Status per item
+
+    func testItemStatusFollowsWhenClaudeCodeSeesTheChange() async throws {
+        try write("---\ndescription: Deploy\n---\n", to: globalSkill)
+        try write("# Web rules\n", to: repository("web").appendingPathComponent("CLAUDE.md"))
+        let model = await makeScannedModel()
+        let web = try XCTUnwrap(model.repositories.first { $0.displayName == "web" })
+        let report = try XCTUnwrap(model.reports[web.id])
+        let skill = try XCTUnwrap(report.items.first { $0.kind == .skill })
+        let rules = try XCTUnwrap(report.items.first { $0.kind == .instruction })
+        XCTAssertEqual(model.syncStatus(of: skill.id, in: web.id), .unchanged)
+
+        try write("---\ndescription: Deploy, then smoke test\n---\n", to: globalSkill)
+        try write("# Web rules\nBe brief.\n", to: repository("web").appendingPathComponent("CLAUDE.md"))
+        await scanAll(model)
+
+        XCTAssertEqual(model.syncStatus(of: skill.id, in: web.id), .changeDetected, "Skill edits are picked up live")
+        XCTAssertEqual(model.syncStatus(of: rules.id, in: web.id), .actionRequired(.nextSession), "Instructions load at session start")
+
+        model.markChangesReviewed()
+        XCTAssertEqual(model.syncStatus(of: skill.id, in: web.id), .unchanged)
+    }
+
+    func testChangedItemWithAConflictSaysSo() async throws {
+        try write("---\ndescription: Repo deploy\n---\n", to: repository("web").appendingPathComponent(".claude/skills/deploy/SKILL.md"))
+        let model = await makeScannedModel()
+        let web = try XCTUnwrap(model.repositories.first { $0.displayName == "web" })
+
+        try write("---\ndescription: Personal deploy\n---\n", to: globalSkill)
+        await scanAll(model)
+
+        let personal = try XCTUnwrap(model.reports[web.id]?.items.first { $0.kind == .skill && $0.scope == .user })
+        XCTAssertEqual(model.syncStatus(of: personal.id, in: web.id), .conflict)
+    }
+
+    func testReviewingOneChangeOpensTheSheetOnIt() async throws {
+        let model = await makeScannedModel()
+        try write("---\ndescription: Deploy\n---\n", to: globalSkill)
+        await scanAll(model)
+        let pending = try XCTUnwrap(model.pendingChanges.first)
+
+        model.review(pending)
+        XCTAssertTrue(model.isReviewingChanges)
+        XCTAssertEqual(model.reviewSelection, pending.id)
+    }
+
     // MARK: - Notifications
 
     /// A scanned model that announces through a recorder, with notifications turned on unless `enabled` is false.

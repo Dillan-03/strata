@@ -32,8 +32,12 @@ struct ItemListView: View {
                 ForEach(groups) { group in
                     Section {
                         ForEach(group.items) { item in
-                            ItemRow(item: item, formatter: formatter)
-                                .tag(item.id)
+                            ItemRow(
+                                item: item,
+                                formatter: formatter,
+                                syncStatus: model.selectedRepositoryID.map { model.syncStatus(of: item.id, in: $0) } ?? .unchanged
+                            )
+                            .tag(item.id)
                         }
                     } header: {
                         Text("\(group.kind.pluralTitle) (\(group.items.count))")
@@ -63,6 +67,7 @@ struct ItemListView: View {
 struct ItemRow: View {
     let item: ConfigItem
     let formatter: PathFormatter
+    var syncStatus: SyncStatus = .unchanged
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -85,13 +90,22 @@ struct ItemRow: View {
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            if syncStatus != .unchanged {
+                SyncTag(status: syncStatus)
+                    .fixedSize()
+            }
             StatusBadge(applicability: item.applicability)
                 .fixedSize()
         }
         .padding(.vertical, 3)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(item.invocation ?? item.name), \(item.kind.title), \(item.scope.title), \(item.applicability.title)")
+        .accessibilityLabel(accessibilityText)
         .accessibilityIdentifier("itemRow.\(item.kind.rawValue).\(item.scope.rawValue).\(item.name)")
+    }
+
+    private var accessibilityText: String {
+        let base = "\(item.invocation ?? item.name), \(item.kind.title), \(item.scope.title), \(item.applicability.title)"
+        return syncStatus == .unchanged ? base : "\(base), \(syncStatus.title)"
     }
 
     private var isStruckThrough: Bool {

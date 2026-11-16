@@ -12,6 +12,10 @@ final class AppModel {
     /// Changes since the last review, across every scanned repository.
     private(set) var pendingChanges: [PendingChange] = []
     var isReviewingChanges = false
+    /// The change Review Changes opens on, when it's opened from one item.
+    var reviewSelection: PendingChange.ID?
+    /// Pending changes by item, for list rows. Observed, so rows update when a change arrives or is reviewed.
+    private var pendingChangesByItem: [ConfigItem.ID: [PendingChange]] = [:]
     /// Repositories whose changes never trigger a notification. They still show in Review Changes.
     private(set) var mutedRepositoryIDs: Set<Repository.ID> = []
     /// Posts notifications for changes once they're due. Nil when the app runs under tests.
@@ -148,10 +152,27 @@ final class AppModel {
         pendingChanges.filter { $0.repositoryIDs.contains(id) }
     }
 
+    /// An item's pending change in one repository, if it has one.
+    func pendingChange(for itemID: ConfigItem.ID, in repositoryID: Repository.ID) -> PendingChange? {
+        pendingChangesByItem[itemID]?.first { $0.repositoryIDs.contains(repositoryID) }
+    }
+
+    func syncStatus(of itemID: ConfigItem.ID, in repositoryID: Repository.ID) -> SyncStatus {
+        let pending = pendingChange(for: itemID, in: repositoryID)
+        return SyncStatus.of(pending?.change, conflicts: pending.map(conflicts(for:)) ?? [])
+    }
+
+    /// Opens Review Changes on one change.
+    func review(_ pending: PendingChange) {
+        reviewSelection = pending.id
+        isReviewingChanges = true
+    }
+
     /// Takes the current scans as the new starting point, so the list empties until something changes again.
     func markChangesReviewed() {
         baselines = reports.filter { !missingRepositoryIDs.contains($0.key) }
         pendingChanges = []
+        pendingChangesByItem = [:]
         scheduleAnnouncement()
     }
 
@@ -241,6 +262,7 @@ final class AppModel {
             }
         }
         pendingChanges = order.compactMap { merged[$0] }
+        pendingChangesByItem = Dictionary(grouping: pendingChanges, by: \.change.item.id)
         scheduleAnnouncement()
     }
 

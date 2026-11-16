@@ -57,6 +57,7 @@ final class ScreenshotTests: XCTestCase {
         app.typeKey("r", modifierFlags: .command)
         let review = app.buttons["reviewChangesButton"]
         XCTAssertTrue(review.waitForExistence(timeout: 15), "The change banner didn't appear")
+        capture(window, as: "changes")
         review.click()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "textDiff").firstMatch.waitForExistence(timeout: 10))
         capture(window, as: "review")

@@ -216,6 +216,20 @@ To show a diff, each scan keeps a masked copy of what defines each item (`ItemCo
     - secret flags in `args` are masked
 - A value that changed behind the mask is still reported, from a hash of the real value. The hash is never shown.
 
+### Status since the last review
+
+Every item gets a status from its pending change and the problems Strata reports for it now (`SyncStatus`):
+
+| Status | When |
+| --- | --- |
+| Unchanged | Nothing about the item changed on disk since the last review |
+| Changed | Changed, and the docs say a running session picks it up by itself (live, or when it's next used) |
+| Reload needed / New session | Changed, and a running session needs `/reload-skills`, `/reload-plugins` or a new session first |
+| Conflict | Changed, and Strata reports a conflict or warning for it now. This takes priority over the others |
+| Unverified | Changed, and the docs don't say when a running session sees it |
+
+Strata can't see inside a running Claude Code session, so no status says a session is up to date. "Update available" and "update failed" need Strata to write configuration, so they come with approved updates (#30).
+
 **Copy Prompt for Claude Code** turns a change into a message for the session you have open (`UpdatePrompt`). It covers:
 
 - what changed, where, its scope and the repositories it reaches

@@ -23,6 +23,7 @@ private struct ItemDetail: View {
     var body: some View {
         Form {
             header
+            changeSection
             statusSection
             whySection
             definitionsSection
@@ -58,6 +59,24 @@ private struct ItemDetail: View {
                 }
             }
             .accessibilityElement(children: .combine)
+        }
+    }
+
+    @ViewBuilder private var changeSection: some View {
+        if let repositoryID = model.selectedRepositoryID, let pending = model.pendingChange(for: item.id, in: repositoryID) {
+            let status = model.syncStatus(of: item.id, in: repositoryID)
+            Section("Since Your Last Review") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(status.title, systemImage: status.symbol)
+                        .foregroundStyle(status.tint)
+                        .fontWeight(.medium)
+                    Text(status == .conflict ? model.conflicts(for: pending).first?.title ?? "" : pending.change.pickup.explanation)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Review Change…") { model.review(pending) }
+                        .accessibilityIdentifier("reviewItemChangeButton")
+                }
+            }
         }
     }
 
