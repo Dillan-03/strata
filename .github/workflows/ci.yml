@@ -44,6 +44,9 @@ jobs:
       - name: Issue-title check tests
         run: node --test .github/scripts/issue-title.test.mjs
 
+      - name: Version script tests
+        run: python3 scripts/next-version.test.py
+
   core:
     name: Core (Linux)
     runs-on: ubuntu-24.04

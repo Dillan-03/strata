@@ -57,9 +57,24 @@ while IFS= read -r line; do
 done < <(security list-keychains -d user)
 security list-keychains -d user -s "$keychain" "${existing_keychains[@]}"
 
-identity="$(security find-identity -v -p codesigning "$keychain" | grep "Developer ID Application" | grep "($APPLE_TEAM_ID)" | head -1 | awk -F'"' '{print $2}')"
+# Prints the first Developer ID Application identity for the team in `security find-identity` output.
+# awk rather than grep: under pipefail a grep that matches nothing ends the script before the messages below.
+team_developer_id() {
+  awk -F'"' -v team="($APPLE_TEAM_ID)" \
+    '!found && index($2, "Developer ID Application: ") == 1 && index($2, team) { print $2; found = 1 }'
+}
+
+all_identities="$(security find-identity -p codesigning "$keychain")"
+valid_identities="$(security find-identity -v -p codesigning "$keychain")"
+identity="$(team_developer_id <<< "$valid_identities")"
 if [ -z "$identity" ]; then
-  echo "::error title=Signing::No Developer ID Application identity for the configured team was found in the certificate."
+  if [ -n "$(team_developer_id <<< "$all_identities")" ]; then
+    echo "::error title=Signing::The .p12 has the Developer ID Application certificate, but macOS doesn't trust it. Install Apple's Developer ID - G2 intermediate certificate from https://www.apple.com/certificateauthority/."
+  else
+    # Only the certificate type before the colon, never the holder's name.
+    kinds="$(awk -F'"' 'NF >= 3 { sub(/:.*/, "", $2); print $2 }' <<< "$all_identities" | sort -u | paste -sd ',' - | sed 's/,/, /g')"
+    echo "::error title=Signing::The .p12 has no Developer ID Application identity for APPLE_TEAM_ID. It contains: ${kinds:-no signing identities}. In Keychain Access, export the Developer ID Application certificate with its private key from My Certificates, and check APPLE_TEAM_ID matches the ID in brackets in its name."
+  fi
   exit 1
 fi
 
