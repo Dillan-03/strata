@@ -101,9 +101,15 @@ private struct ItemDetail: View {
                 }
                 if allowsFixes {
                     Label("Fix available: this copy never runs", systemImage: "wrench.and.screwdriver")
+                    Text(fixes.count > 1
+                        ? "Remove it, or replace it with the copy that runs. You'll see exactly what changes first."
+                        : "Remove it. You'll see exactly what changes first.")
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     HStack {
                         ForEach(fixes) { fix in
                             Button(fix.action.buttonTitle) { model.proposedFix = fix }
+                                .help(fix.title)
                                 .accessibilityIdentifier("fix.\(fix.action.rawValue)")
                         }
                     }
