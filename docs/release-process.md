@@ -18,40 +18,43 @@ The biggest bump wins. While the version is 0.x, a breaking change bumps the min
 
 ## Cutting a release
 
-1. Run `scripts/next-version.py` to get the version. Open a PR that sets `MARKETING_VERSION` to it (and bumps `CURRENT_PROJECT_VERSION`) in `App/project.yml`, and moves the `Unreleased` entries in `CHANGELOG.md` under `## [<version>] - <date>`. Merge it once CI is green.
-2. Tag the merge commit on `main` and push the tag:
+Merging a release PR is the whole release. Nobody pushes tags.
 
-   ```bash
-   version=0.2.0
-   git switch main && git pull
-   git tag -a "v$version" -m "Strata $version"
-   git push origin "v$version"
-   ```
+1. Run `scripts/next-version.py` to get the version. Open a PR that:
+   - sets `MARKETING_VERSION` to it in `App/project.yml`, and bumps `CURRENT_PROJECT_VERSION`
+   - moves the `Unreleased` entries in `CHANGELOG.md` under `## [<version>] - <date>`
 
-3. The workflow runs these jobs in order. Each one starts only if the one before it passed.
-   - **CI**: all of `ci.yml` on the tagged commit (lint, core tests on Linux, then app and UI tests on macOS 15)
-   - **build** (macOS 15, read-only token):
-     - checks the tag points at a commit on `main` and matches `MARKETING_VERSION`
-     - checks the version is the one the changelog calls for
-     - builds a universal Release app, signs and notarises it (or ad-hoc signs it)
-     - zips it and uploads the zip as an artifact
-   - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip.
+   CI's **Release check** annotates the PR with "Merging this releases <version>". It fails if the changelog doesn't match.
+2. Merge it once CI is green. The push to `main` starts `.github/workflows/release.yml`, which runs these jobs in order. Each starts only if the one before it passed.
+   - **Plan** (Linux): sees that `v<version>` isn't tagged yet, so this push is a release. It checks:
+     - the commit is on `main`
+     - the version isn't already published
+     - the changelog calls for this version
+
+     On any other push to `main` the version is already tagged, so Plan stops the run here.
+   - **CI**: all of `ci.yml` on the merged commit (lint, core tests on Linux, then app and UI tests on macOS 15)
+   - **build** (macOS 15, read-only token): builds a universal Release app, signs and notarises it (or ad-hoc signs it), then zips it and uploads the zip as an artifact
+   - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip
    - **publish** (Linux, write token):
-     - creates the GitHub Release (a pre-release when unsigned)
+     - creates the GitHub Release and its `v<version>` tag on the merged commit. It's a pre-release when unsigned.
      - opens a `[Chore] Update Homebrew cask to <version>` PR
-4. Close and reopen the cask PR so CI runs on it. PRs opened with the workflow token don't trigger workflows. Merge it once green.
-5. Check the release:
+3. The cask PR:
+   - **With `RELEASE_TOKEN` ([#78](https://github.com/Dillan-03/strata/issues/78)):** opened with your token, so CI runs on it and it merges itself once green.
+   - **Without it:** opened with the workflow token, which doesn't trigger CI. Close and reopen it, then merge it once green.
+4. Check the release:
 
    ```bash
    brew update && brew upgrade --cask strata-inspector
    ```
 
+If a job fails, nothing is published and no tag is created. Fix the cause, then go to **Actions → Release → Run workflow** on `main`, with the version and `publish` ticked, to retry.
+
 ## Dry runs
 
-- Any pull request that touches `scripts/`, `packaging/` or the release workflow runs the build and verify jobs without publishing. It skips the CI job, because the pull request's own CI run covers it.
-- **Actions → Release → Run workflow** with `publish` unchecked runs CI, build and verify for any branch. The zip is kept as a workflow artifact for 30 days.
+- Any pull request that touches `scripts/`, `packaging/` or the release workflow runs Plan, build and verify without publishing. It skips the CI job, because the pull request's own CI run covers it.
+- **Actions → Release → Run workflow** with `publish` unticked runs Plan, CI, build and verify for any branch. The zip is kept as a workflow artifact for 30 days.
 
-With `publish` checked, a manual run publishes the existing tag `v<version>`. It refuses to run unless that tag points at the commit being built.
+With `publish` ticked, a manual run publishes `v<version>` from the commit being built. It refuses unless that commit is on `main`, the version isn't already published, and any existing tag points at that commit.
 
 ## Signing secrets
 
@@ -76,7 +79,7 @@ Setup steps are in [#22](https://github.com/Dillan-03/strata/issues/22). To conf
 | --- | --- |
 | `scripts/build-release.sh` | Generates the project and builds a universal Release app to `build/Release/Strata.app` |
 | `scripts/sign-and-notarize.sh` | Developer ID signing and notarisation, or an ad-hoc fallback |
-| `scripts/next-version.py [--check <version>]` | Prints the next version from the changelog, or checks a release version against it |
+| `scripts/next-version.py [--check <version>]` | Prints the next version from the changelog, or checks a release version against it (Plan and CI's Release check) |
 | `scripts/package-release.sh <version>` | Zips the app to `dist/` with a `.sha256` file and checks the version |
 | `scripts/smoke-test-app.sh <app>` | Launches the app headlessly and checks it stays up |
 | `scripts/render-cask.sh <version> <sha256> [url]` | Writes the cask from `packaging/strata-inspector.rb.template` |
