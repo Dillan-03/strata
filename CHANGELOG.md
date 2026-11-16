@@ -16,6 +16,12 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
     - the diff, with secrets masked, and any conflicts
     - how to confirm it has the new version
   It also says when to run `/reload-skills` or `/reload-plugins` first. It only goes to the clipboard.
+- **Status since your last review** on every changed item: a tag in the list and a line in the inspector, with a button to review that change. Possible statuses:
+    - Changed: picked up by itself
+    - Reload needed: run `/reload-skills` or `/reload-plugins`
+    - New session
+    - Conflict
+    - Unverified: the docs don't say when it applies
 - **Notifications for changes**, off until you turn them on in Settings:
     - edits that land within a few seconds of each other arrive as one notification, held back at most 30 seconds
     - each change is announced once until you review it
