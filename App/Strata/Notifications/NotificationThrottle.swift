@@ -4,14 +4,20 @@ import Foundation
 /// been announced isn't announced again while it's still waiting for review.
 struct NotificationThrottle {
     /// How long to wait after the latest new change, so the rest of a burst can land.
-    var settle: TimeInterval = 5
+    var settle: TimeInterval
     /// The longest a change waits, so a stream of edits can't hold notifications back for ever.
-    var maximumWait: TimeInterval = 30
+    var maximumWait: TimeInterval
 
     private(set) var announced: Set<String> = []
     private var waiting: Set<String> = []
     private var firstSeen: Date?
     private var lastSeen: Date?
+
+    /// Spelled out because the private state above makes the synthesized one private.
+    init(settle: TimeInterval = 5, maximumWait: TimeInterval = 30) {
+        self.settle = settle
+        self.maximumWait = maximumWait
+    }
 
     /// When the waiting changes are due, or nil when nothing new is waiting.
     var dueDate: Date? {
