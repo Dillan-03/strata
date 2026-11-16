@@ -47,7 +47,7 @@ Release notes always say which kind of build a release is.
   xattr -dr com.apple.quarantine /Applications/Strata.app
   ```
 
-Builds stay unsigned until the Apple credentials in [#22](https://github.com/Dillan-03/strata/issues/22) are added as repository secrets.
+Releases from 0.2.0 on are signed, using the Apple credentials set up in [#22](https://github.com/Dillan-03/strata/issues/22). If those secrets are ever missing, the workflow publishes an unsigned pre-release with the warning above. If they're present but wrong, it fails rather than publishing.
 
 ## Verifying a download
 
