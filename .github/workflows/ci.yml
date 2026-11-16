@@ -6,6 +6,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # The Release workflow runs all of CI before it builds.
+  workflow_call:
 
 permissions:
   contents: read
@@ -75,8 +77,42 @@ jobs:
           echo "::notice title=StrataCore tests (Linux)::${summary}"
           python3 .github/scripts/coverage.py "$(swift test --package-path Packages/StrataCore --show-codecov-path)"
 
+  changes:
+    name: Changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.diff.outputs.app }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      # macOS runners are scarce, so a pull request that can't affect the app skips its tests.
+      # Every other event tests everything.
+      - name: Decide whether the app tests run
+        id: diff
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=App tests::Running: every $GITHUB_EVENT_NAME run tests the app."
+            exit 0
+          fi
+          # A pull request is checked out as a merge commit whose first parent is the base branch.
+          relevant="$(git diff --name-only HEAD^1 HEAD | grep -E '^(App/|Packages/|\.github/workflows/ci\.yml$|\.github/scripts/xcresult-report\.py$)' || true)"
+          if [ -n "$relevant" ]; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=App tests::Running: this pull request changes $(wc -l <<< "$relevant" | tr -d ' ') app file(s), starting with $(head -1 <<< "$relevant")."
+          else
+            echo "app=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=App tests::Skipped: nothing in App/, Packages/ or the app's CI changed."
+          fi
+
   app:
     name: App (macOS)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: macos-15
     timeout-minutes: 30
     steps:

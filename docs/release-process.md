@@ -28,11 +28,11 @@ The biggest bump wins. While the version is 0.x, a breaking change bumps the min
    git push origin "v$version"
    ```
 
-3. The workflow runs:
+3. The workflow runs these jobs in order. Each one starts only if the one before it passed.
+   - **CI**: all of `ci.yml` on the tagged commit (lint, core tests on Linux, then app and UI tests on macOS 15)
    - **build** (macOS 15, read-only token):
      - checks the tag points at a commit on `main` and matches `MARKETING_VERSION`
      - checks the version is the one the changelog calls for
-     - runs core and app unit tests
      - builds a universal Release app, signs and notarises it (or ad-hoc signs it)
      - zips it and uploads the zip as an artifact
    - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip.
@@ -48,8 +48,8 @@ The biggest bump wins. While the version is 0.x, a breaking change bumps the min
 
 ## Dry runs
 
-- Any pull request that touches `scripts/`, `packaging/` or the release workflow runs the build and verify jobs without publishing.
-- **Actions → Release → Run workflow** with `publish` unchecked does the same for any branch. The zip is kept as a workflow artifact for 30 days.
+- Any pull request that touches `scripts/`, `packaging/` or the release workflow runs the build and verify jobs without publishing. It skips the CI job, because the pull request's own CI run covers it.
+- **Actions → Release → Run workflow** with `publish` unchecked runs CI, build and verify for any branch. The zip is kept as a workflow artifact for 30 days.
 
 With `publish` checked, a manual run publishes the existing tag `v<version>`. It refuses to run unless that tag points at the commit being built.
 
