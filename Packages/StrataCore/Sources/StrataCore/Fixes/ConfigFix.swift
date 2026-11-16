@@ -141,8 +141,7 @@ public struct FixPreview: Hashable, Sendable {
         guard isDirectory.boolValue else { return [url.lastPathComponent] }
         return ((try? fileManager.subpathsOfDirectory(atPath: url.path)) ?? []).filter { path in
             var isFolder: ObjCBool = false
-            fileManager.fileExists(atPath: url.appendingPathComponent(path).path, isDirectory: &isFolder)
-            return !isFolder.boolValue
+            return fileManager.fileExists(atPath: url.appendingPathComponent(path).path, isDirectory: &isFolder) && !isFolder.boolValue
         }
         .sorted()
     }
