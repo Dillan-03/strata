@@ -1,0 +1,76 @@
+name: Release PR
+
+# Keeps one pull request open that releases the Unreleased entries: it sets MARKETING_VERSION to the version they call
+# for and moves them under that heading. Merging it is the release, and release.yml takes over from there.
+on:
+  push:
+    branches: [main]
+  # Rebuilds the PR by hand, for example to refresh the release date.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-pr
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: Update release PR
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      # Starts CI on the release PR.
+      actions: write
+    env:
+      BRANCH: release/next
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Update release PR
+        run: |
+          status=0
+          version=$(scripts/next-version.py) || status=$?
+          if [ "$status" -eq 3 ]; then
+            echo "::notice title=Release PR::Unreleased is empty, so there's nothing to release."
+            exit 0
+          elif [ "$status" -ne 0 ]; then
+            echo "$version"
+            exit 1
+          fi
+
+          previous=$(grep -E '^\s+MARKETING_VERSION:' App/project.yml | head -1 | awk '{print $2}')
+          build=$(grep -E '^\s+CURRENT_PROJECT_VERSION:' App/project.yml | head -1 | awk '{print $2}')
+          sed -i -E "s/^(\s+MARKETING_VERSION:).*/\1 $version/; s/^(\s+CURRENT_PROJECT_VERSION:).*/\1 $((build + 1))/" App/project.yml
+          # A heading under Unreleased takes all of its entries, and the new version gets a link like the others.
+          sed -i -e "s/^## \[Unreleased\]$/&\n\n## [$version] - $(date -u +%F)/" \
+            -e "s|^\[$previous\]: |[$version]: https://github.com/$GITHUB_REPOSITORY/releases/tag/v$version\n&|" CHANGELOG.md
+          scripts/next-version.py --check "$version"
+          notes=$(awk -v heading="## [$version]" 'index($0, heading) == 1 { found = 1; next } /^## \[/ { found = 0 } found' CHANGELOG.md)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -q -c "$BRANCH"
+          git commit -qam "[Chore] Release $version"
+          # Rebuilt from main on every merge, so the PR is always up to date with main and never edited by hand.
+          git push -q --force origin "$BRANCH"
+
+          title="[Chore] Release $version"
+          body="Merging this releases **$version**. The Release workflow then tags \`v$version\`, builds, signs, notarises and publishes it, and opens the Homebrew cask PR.
+
+          This branch is rebuilt from \`main\` after every merge, so don't edit it. To change what ships, edit \`## [Unreleased]\` in \`CHANGELOG.md\` in a normal PR.
+
+          $notes"
+          number=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh pr edit "$number" --title "$title" --body "$body"
+          else
+            gh pr create --base main --head "$BRANCH" --title "$title" --body "$body"
+          fi
+          # Events from the workflow token don't start other workflows, except workflow_dispatch. Its checks count as the PR's.
+          gh workflow run ci.yml --ref "$BRANCH"
+          echo "::notice title=Release PR::$title is up to date with main, and CI is running on it."

@@ -20,7 +20,7 @@ Installing by the fully qualified name (`dillan-03/strata/strata-inspector`) tru
 | Uninstall and remove Strata's own data | `brew uninstall --zap --cask strata-inspector` |
 | Remove the tap | `brew untap dillan-03/strata` |
 
-The cask is only usable once `Casks/strata-inspector.rb` exists on `main`. The Release workflow commits the updated cask to `main` after each release.
+The cask is only usable once `Casks/strata-inspector.rb` exists on `main`. The Release workflow opens a pull request updating it after each release, so a new version reaches Homebrew once that PR is merged.
 
 ### What uninstalling removes
 

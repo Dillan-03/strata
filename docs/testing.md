@@ -45,7 +45,7 @@ Tests build their fixtures in code with the helpers in `Tests/StrataCoreTests/Su
 
 `.github/workflows/ci.yml` runs on every pull request and on pushes to `main`. The Release workflow also runs all of it before building a release.
 
-- **Lint:** actionlint, shellcheck, SwiftLint `--strict`, the issue-title tests and the version script tests. Its **Release check** says which version merging releases, worked out from the Unreleased entries by `scripts/next-version.py`, or that it releases nothing. A changelog the script can't read fails the check before it merges.
+- **Lint:** actionlint, shellcheck, SwiftLint `--strict`, the issue-title tests and the version script tests. Its **Release check** says what merging does: updates the release PR to the version the Unreleased entries call for, releases (on the release PR itself, after `scripts/next-version.py --check`), or nothing. A changelog the script can't read fails the check before it merges.
 - **Core (Linux):** checks StrataCore has no package dependencies, builds with warnings as errors, and runs the core tests.
 - **Changes:** decides whether the macOS app tests are needed. A pull request runs them only if it changes `App/`, `Packages/`, `ci.yml` or `.github/scripts/xcresult-report.py`. Every other run tests the app. An annotation says which, and why.
 - **App (macOS):** runs the core tests on macOS, then generates the project and runs the app and UI tests, then `xcodebuild analyze`. When Changes skips it, it shows as skipped, which still counts as passing for a required check.

@@ -14,7 +14,7 @@ Thanks for helping. Strata is a small macOS tool that's read-only by default, an
 1. Open (or pick) an issue. Titles start with `[Feature]`, `[Bug]` or `[Chore]`.
 2. Branch from the latest `main`: `feature/issue-12-short-slug`, `fix/issue-21-short-slug` or `chore/issue-5-short-slug`.
 3. Make the change with tests. Bug fixes include a regression test where practical.
-4. If users will notice the change, add a line under `## [Unreleased]` in `CHANGELOG.md`, under `### Added`, `### Changed`, `### Deprecated`, `### Removed`, `### Fixed` or `### Security`. Start a breaking change with `**Breaking:**`. These headings decide the next version number, and merging releases it: don't edit `MARKETING_VERSION` yourself. See [docs/release-process.md](docs/release-process.md#versioning).
+4. If users will notice the change, add a line under `## [Unreleased]` in `CHANGELOG.md`, under `### Added`, `### Changed`, `### Deprecated`, `### Removed`, `### Fixed` or `### Security`. Start a breaking change with `**Breaking:**`. These headings decide the next version number, which the automatic release PR picks up, so don't edit `MARKETING_VERSION` yourself. See [docs/release-process.md](docs/release-process.md#versioning).
 5. Open a PR using the template, with `Closes #<issue>`.
 6. Wait for CI to pass. Fix the root cause of failures rather than retrying.
 7. Squash merge. The issue closes when the PR merges.
