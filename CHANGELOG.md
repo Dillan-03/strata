@@ -16,6 +16,11 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
     - the diff, with secrets masked, and any conflicts
     - how to confirm it has the new version
   It also says when to run `/reload-skills` or `/reload-plugins` first. It only goes to the clipboard.
+- **Notifications for changes**, off until you turn them on in Settings:
+    - edits that land within a few seconds of each other arrive as one notification, held back at most 30 seconds
+    - each change is announced once until you review it
+    - clicking a notification opens Review Changes
+    - you can pause them for an hour or until tomorrow, or silence one repository from its menu in the sidebar
 
 ### Fixed
 

@@ -17,11 +17,7 @@ struct RepositoryStore {
 
     static let defaultsKey = "repositories.v1"
 
-    private let defaults: UserDefaults
-
-    init(defaults: UserDefaults) {
-        self.defaults = defaults
-    }
+    let defaults: UserDefaults
 
     func load() -> [Entry] {
         guard let data = defaults.data(forKey: Self.defaultsKey) else { return [] }

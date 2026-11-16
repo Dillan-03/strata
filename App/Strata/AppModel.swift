@@ -12,6 +12,12 @@ final class AppModel {
     /// Changes since the last review, across every scanned repository.
     private(set) var pendingChanges: [PendingChange] = []
     var isReviewingChanges = false
+    /// Repositories whose changes never trigger a notification. They still show in Review Changes.
+    private(set) var mutedRepositoryIDs: Set<Repository.ID> = []
+    /// Posts notifications for changes once they're due. Nil when the app runs under tests.
+    @ObservationIgnored var announcer: ChangeAnnouncing?
+    @ObservationIgnored var throttle = NotificationThrottle()
+    @ObservationIgnored private var announcementTask: Task<Void, Never>?
 
     var selectedRepositoryID: Repository.ID?
     var category: Category = .all
@@ -33,7 +39,12 @@ final class AppModel {
     init(store: RepositoryStore, environment: ScanEnvironment = .current()) {
         self.store = store
         self.environment = environment
+        mutedRepositoryIDs = notificationPreferences.mutedRepositoryIDs
         restore()
+    }
+
+    var notificationPreferences: NotificationPreferences {
+        NotificationPreferences(defaults: store.defaults)
     }
 
     // MARK: - Selection
@@ -141,6 +152,45 @@ final class AppModel {
     func markChangesReviewed() {
         baselines = reports.filter { !missingRepositoryIDs.contains($0.key) }
         pendingChanges = []
+        scheduleAnnouncement()
+    }
+
+    // MARK: - Notifications
+
+    func notifiesAboutChanges(in id: Repository.ID) -> Bool {
+        !mutedRepositoryIDs.contains(id)
+    }
+
+    func setNotifiesAboutChanges(_ notifies: Bool, in id: Repository.ID) {
+        if notifies { mutedRepositoryIDs.remove(id) } else { mutedRepositoryIDs.insert(id) }
+        notificationPreferences.saveMutedRepositoryIDs(mutedRepositoryIDs)
+        scheduleAnnouncement()
+    }
+
+    /// Pending changes that reach at least one repository that isn't muted.
+    private var announceableChanges: [PendingChange] {
+        pendingChanges.filter { !Set($0.repositoryIDs).isSubset(of: mutedRepositoryIDs) }
+    }
+
+    /// Restarts the wait for the next announcement. Every change in the pending list goes through here, so a burst
+    /// of edits pushes the announcement back until it settles.
+    private func scheduleAnnouncement() {
+        announcementTask?.cancel()
+        guard announcer != nil, let due = throttle.observe(announceableChanges.map(\.id), at: .now) else { return }
+        announcementTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(0, due.timeIntervalSinceNow)))
+            guard !Task.isCancelled else { return }
+            self?.announceDueChanges()
+        }
+    }
+
+    /// Announces the changes that are due. Changes that come due while notifications are off or paused are
+    /// dropped rather than saved up, so turning them back on doesn't bring a flood.
+    func announceDueChanges(at now: Date = .now) {
+        let candidates = announceableChanges
+        guard let due = throttle.due(candidates.map(\.id), at: now) else { return }
+        guard notificationPreferences.allowsAnnouncements(at: now) else { return }
+        announcer?.announce(candidates.filter { due.contains($0.id) })
     }
 
     /// What a change does in each repository that had a scan before it: applies, overridden, or out of reach.
@@ -191,6 +241,7 @@ final class AppModel {
             }
         }
         pendingChanges = order.compactMap { merged[$0] }
+        scheduleAnnouncement()
     }
 
     // MARK: - Automatic refresh
@@ -255,6 +306,9 @@ final class AppModel {
         missingRepositoryIDs.remove(id)
         reports[id] = nil
         baselines[id] = nil
+        if mutedRepositoryIDs.remove(id) != nil {
+            notificationPreferences.saveMutedRepositoryIDs(mutedRepositoryIDs)
+        }
         updatePendingChanges()
         if selectedRepositoryID == id {
             selectedRepositoryID = repositories.first?.id
