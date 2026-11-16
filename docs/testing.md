@@ -43,11 +43,12 @@ Tests build their fixtures in code with the helpers in `Tests/StrataCoreTests/Su
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`:
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`. The Release workflow also runs all of it before building a release.
 
 - **Lint:** actionlint, shellcheck, SwiftLint `--strict`, and the issue-title tests.
 - **Core (Linux):** checks StrataCore has no package dependencies, builds with warnings as errors, and runs the core tests.
-- **App (macOS):** runs the core tests on macOS, then generates the project and runs the app and UI tests, then `xcodebuild analyze`.
+- **Changes:** decides whether the macOS app tests are needed. A pull request runs them only if it changes `App/`, `Packages/`, `ci.yml` or `.github/scripts/xcresult-report.py`. Every other run tests the app. An annotation says which, and why.
+- **App (macOS):** runs the core tests on macOS, then generates the project and runs the app and UI tests, then `xcodebuild analyze`. When Changes skips it, it shows as skipped, which still counts as passing for a required check.
   - Test counts are posted as check annotations, along with the name of every failing test.
   - The `.xcresult` bundle is uploaded as an artifact.
 - **Dependency review:** runs once the dependency graph is enabled (see #21).

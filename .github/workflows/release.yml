@@ -30,8 +30,18 @@ env:
   XCODEGEN_SHA256: "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
 
 jobs:
+  # A release is built only from a commit that passes all of CI. A pull request skips this: its own CI run covers it.
+  ci:
+    name: CI
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
   build:
     name: Build and sign
+    needs: ci
+    if: ${{ !cancelled() && (needs.ci.result == 'success' || (github.event_name == 'pull_request' && needs.ci.result == 'skipped')) }}
     runs-on: macos-15
     timeout-minutes: 75
     outputs:
@@ -107,14 +117,6 @@ jobs:
           unzip -q xcodegen.zip -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
 
-      - name: Release tests
-        id: tests
-        run: |
-          set -o pipefail
-          swift test --package-path Packages/StrataCore
-          (cd App && xcodegen generate --quiet)
-          xcodebuild test -project App/Strata.xcodeproj -scheme Strata -destination 'platform=macOS' -only-testing:StrataTests -quiet
-
       - name: Build Release
         id: build
         run: scripts/build-release.sh
@@ -161,6 +163,8 @@ jobs:
   verify:
     name: Verify install (${{ matrix.os }})
     needs: build
+    # Explicit, because a skipped CI job upstream would otherwise skip this on pull requests.
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -201,7 +205,7 @@ jobs:
   publish:
     name: Publish release
     needs: [build, verify]
-    if: needs.build.outputs.publish == 'true'
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.verify.result == 'success' && needs.build.outputs.publish == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
