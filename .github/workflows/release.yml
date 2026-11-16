@@ -85,6 +85,13 @@ jobs:
             exit 1
           fi
 
+      - name: Check version against changelog
+        id: semver
+        if: steps.version.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: scripts/next-version.py --check "$VERSION"
+
       - name: Select Xcode
         id: xcode
         run: |
