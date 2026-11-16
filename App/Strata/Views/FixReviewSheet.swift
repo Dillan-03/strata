@@ -164,10 +164,11 @@ extension ConfigFix {
 }
 
 extension ConfigFix.Action {
+    /// Short, because the inspector is narrow; the sentence above the buttons and the tooltip say the rest.
     var buttonTitle: String {
         switch self {
-        case .removeCopy: "Remove This Copy…"
-        case .replaceWithWinner: "Replace With the Copy That Runs…"
+        case .removeCopy: "Remove…"
+        case .replaceWithWinner: "Replace…"
         }
     }
 
