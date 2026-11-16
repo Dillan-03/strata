@@ -156,6 +156,16 @@ final class AppModel {
         }
     }
 
+    /// A message for the running Claude Code session, describing the change. Strata never sends it.
+    func updatePrompt(for pending: PendingChange) -> String {
+        UpdatePrompt.make(
+            for: pending.change,
+            impacts: impacts(of: pending.change).map(\.impact),
+            conflicts: conflicts(for: pending),
+            homePath: environment.homeDirectory.path
+        )
+    }
+
     /// Problems Strata reports for the changed item now, in any repository it reaches.
     func conflicts(for pending: PendingChange) -> [Diagnostic] {
         guard pending.change.kind != .deleted else { return [] }

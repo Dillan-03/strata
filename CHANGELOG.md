@@ -11,6 +11,11 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
     - the repositories it reaches, and whether a repository's own copy overrides it
     - when a running Claude Code session sees it, with the docs source
     - conflicts, and security notes for hooks, permissions, MCP servers, plugins and `allowed-tools`
+- **Copy Prompt for Claude Code** on each change. It's a ready-to-paste message telling a running session:
+    - what changed and where, and which repositories it reaches
+    - the diff, with secrets masked, and any conflicts
+    - how to confirm it has the new version
+  It also says when to run `/reload-skills` or `/reload-plugins` first. It only goes to the clipboard.
 
 ### Fixed
 
