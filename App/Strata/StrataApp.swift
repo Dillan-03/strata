@@ -72,6 +72,7 @@ struct StrataApp: App {
 
         Settings {
             SettingsView(notifications: notifications)
+                .environment(model)
                 .defaultAppStorage(defaults)
         }
     }

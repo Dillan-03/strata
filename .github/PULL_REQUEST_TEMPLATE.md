@@ -26,7 +26,7 @@ Closes #
 ## Security considerations
 
 - [ ] No secrets in code, logs, test output or screenshots
-- [ ] Still read-only by default (no writes to Claude Code configuration)
+- [ ] Still read-only by default: any write goes through `ConfigWriter`, behind the fixes setting and an approval
 - [ ] No new network access
 
 ## Documentation changes

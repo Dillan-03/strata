@@ -1,6 +1,7 @@
 import Foundation
 
-/// Scans a repository and the user's global Claude Code configuration. Read-only: it never writes, executes or connects.
+/// Scans a repository and the user's global Claude Code configuration. It never writes, executes or connects; the only
+/// writer is `ConfigWriter`, which runs fixes the user approves.
 public struct Inspector: Sendable {
     public let environment: ScanEnvironment
 

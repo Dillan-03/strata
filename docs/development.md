@@ -45,7 +45,7 @@ The split matters. Anything about how Claude Code loads configuration lives in S
 
 ## Running against your own configuration
 
-Run the **Strata** scheme. It reads your real `~/.claude` and `~/.claude.json` but never writes to them.
+Run the **Strata** scheme. It reads your real `~/.claude` and `~/.claude.json`. It only writes there if you turn on fixes in Settings and approve one, so leave fixes off, or use a throwaway setup, while developing.
 
 To try it against a throwaway setup instead, edit the scheme and add these:
 

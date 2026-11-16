@@ -16,6 +16,7 @@ struct ItemInspectorView: View {
 
 private struct ItemDetail: View {
     @Environment(AppModel.self) private var model
+    @AppStorage(PreferenceKey.allowsFixes) private var allowsFixes = false
     let item: ConfigItem
     let report: InspectionReport
     let formatter: PathFormatter
@@ -25,6 +26,7 @@ private struct ItemDetail: View {
             header
             changeSection
             statusSection
+            fixSection
             whySection
             definitionsSection
             kindSpecificSections
@@ -75,6 +77,41 @@ private struct ItemDetail: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Button("Review Change…") { model.review(pending) }
                         .accessibilityIdentifier("reviewItemChangeButton")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var fixSection: some View {
+        switch model.fixOffer(for: item) {
+        case .none:
+            EmptyView()
+        case .unavailable(let reason):
+            Section("Fix") {
+                Text(reason)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        case .available(let fixes):
+            Section("Fix") {
+                if let failure = model.failedFixes[item.id] {
+                    Label("The last fix failed: \(failure)", systemImage: "xmark.octagon")
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if allowsFixes {
+                    Label("Fix available: this copy never runs", systemImage: "wrench.and.screwdriver")
+                    HStack {
+                        ForEach(fixes) { fix in
+                            Button(fix.action.buttonTitle) { model.proposedFix = fix }
+                                .accessibilityIdentifier("fix.\(fix.action.rawValue)")
+                        }
+                    }
+                } else {
+                    Text("Strata can remove this copy, or replace it with the one that runs. Turn on fixes in Settings to use them.")
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    SettingsLink { Text("Open Settings…") }
                 }
             }
         }

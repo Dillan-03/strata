@@ -14,6 +14,12 @@ final class AppModel {
     var isReviewingChanges = false
     /// The change Review Changes opens on, when it's opened from one item.
     var reviewSelection: PendingChange.ID?
+    /// A fix waiting for approval on the fix review screen.
+    var proposedFix: ConfigFix?
+    /// The last fix that failed for each item, shown in its inspector until a fix succeeds.
+    private(set) var failedFixes: [ConfigItem.ID: String] = [:]
+    /// Fixes Strata made, newest first, read from their backups.
+    private(set) var fixRecords: [FixRecord] = []
     /// Pending changes by item, for list rows. Observed, so rows update when a change arrives or is reviewed.
     private var pendingChangesByItem: [ConfigItem.ID: [PendingChange]] = [:]
     /// Repositories whose changes never trigger a notification. They still show in Review Changes.
@@ -45,6 +51,7 @@ final class AppModel {
         self.environment = environment
         mutedRepositoryIDs = notificationPreferences.mutedRepositoryIDs
         restore()
+        reloadFixRecords()
     }
 
     var notificationPreferences: NotificationPreferences {
@@ -174,6 +181,65 @@ final class AppModel {
         pendingChanges = []
         pendingChangesByItem = [:]
         scheduleAnnouncement()
+    }
+
+    // MARK: - Fixes
+
+    /// Backups sit under the home Strata inspects, so UI tests keep theirs inside the fixture.
+    var fixBackupDirectory: URL {
+        environment.homeDirectory.appendingPathComponent("Library/Application Support/Strata/Backups", isDirectory: true)
+    }
+
+    var allowsFixes: Bool { store.defaults.bool(forKey: PreferenceKey.allowsFixes) }
+
+    func fixOffer(for item: ConfigItem) -> FixOffer {
+        guard let report = selectedReport else { return .none }
+        return FixPlanner.offer(for: item, in: report, environment: environment)
+    }
+
+    /// Runs a fix the user approved in the repository it was offered for, then rescans so the lists show the result.
+    func apply(_ fix: ConfigFix, in repositoryID: Repository.ID) async -> FixOutcome {
+        guard allowsFixes else { return .failed("Fixes are turned off in Settings, so Strata changed nothing.") }
+        guard let report = reports[repositoryID] else { return .failed("Strata has no scan of this repository.") }
+        let writer = ConfigWriter(
+            backupDirectory: fixBackupDirectory,
+            allowedRoots: FixPlanner.allowedRoots(repositoryPath: report.repositoryPath, environment: environment)
+        )
+        let outcome: FixOutcome
+        do {
+            outcome = .applied(try writer.apply(fix))
+            failedFixes[fix.target.id] = nil
+        } catch {
+            failedFixes[fix.target.id] = error.localizedDescription
+            outcome = .failed(error.localizedDescription)
+        }
+        await finishWrite()
+        return outcome
+    }
+
+    /// Puts back what a fix changed, unless something has changed there since.
+    func undo(_ record: FixRecord) async -> FixOutcome {
+        let roots = [environment.claudeDirectory] + repositories.map { $0.url.appendingPathComponent(".claude") }
+        let outcome: FixOutcome
+        do {
+            outcome = .undone(try ConfigWriter(backupDirectory: fixBackupDirectory, allowedRoots: roots).undo(record))
+        } catch {
+            outcome = .failed(error.localizedDescription)
+        }
+        await finishWrite()
+        return outcome
+    }
+
+    func reloadFixRecords() {
+        fixRecords = ConfigWriter(backupDirectory: fixBackupDirectory, allowedRoots: []).records()
+    }
+
+    /// A fix can change ~/.claude, which every repository sees, so every scanned repository is rescanned.
+    private func finishWrite() async {
+        reloadFixRecords()
+        for id in Array(reports.keys) {
+            await scan(id)
+        }
     }
 
     // MARK: - Notifications
@@ -422,4 +488,19 @@ struct RepositoryEffect: Identifiable {
     let impact: RepositoryImpact
 
     var id: Repository.ID { repository.id }
+}
+
+/// What a fix or an undo did.
+enum FixOutcome: Identifiable {
+    case applied(FixRecord)
+    case undone(FixRecord)
+    case failed(String)
+
+    var id: String {
+        switch self {
+        case .applied(let record): "applied-\(record.id)"
+        case .undone(let record): "undone-\(record.id)"
+        case .failed(let message): "failed-\(message)"
+        }
+    }
 }

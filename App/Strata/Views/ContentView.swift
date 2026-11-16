@@ -37,6 +37,10 @@ struct ContentView: View {
             ChangeReviewSheet()
                 .environment(model)
         }
+        .sheet(item: $model.proposedFix) { fix in
+            FixReviewSheet(fix: fix, repositoryID: model.selectedRepositoryID)
+                .environment(model)
+        }
     }
 }
 

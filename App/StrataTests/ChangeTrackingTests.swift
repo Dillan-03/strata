@@ -176,6 +176,73 @@ final class ChangeTrackingTests: XCTestCase {
         XCTAssertEqual(model.reviewSelection, pending.id)
     }
 
+    // MARK: - Fixes
+
+    private struct OverriddenSkill {
+        let repositoryID: Repository.ID
+        let fix: ConfigFix
+        let folder: URL
+    }
+
+    /// The web repository's own deploy skill, overridden by a personal one, and the offered fix of `action`.
+    private func overriddenRepoSkill(_ model: AppModel, action: ConfigFix.Action) throws -> OverriddenSkill {
+        let web = try XCTUnwrap(model.repositories.first { $0.displayName == "web" })
+        model.selectedRepositoryID = web.id
+        let item = try XCTUnwrap(model.reports[web.id]?.items.first { $0.kind == .skill && $0.scope == .project })
+        guard case .available(let fixes) = model.fixOffer(for: item) else {
+            XCTFail("Expected a fix for the overridden repository skill")
+            throw CancellationError()
+        }
+        let fix = try XCTUnwrap(fixes.first { $0.action == action })
+        return OverriddenSkill(repositoryID: web.id, fix: fix, folder: repository("web").appendingPathComponent(".claude/skills/deploy"))
+    }
+
+    private func makeModelWithOverriddenSkill() async throws -> AppModel {
+        try write("---\ndescription: Repo deploy\n---\n", to: repository("web").appendingPathComponent(".claude/skills/deploy/SKILL.md"))
+        try write("---\ndescription: Personal deploy\n---\n", to: globalSkill)
+        return await makeScannedModel()
+    }
+
+    func testFixesDoNothingWhileTurnedOff() async throws {
+        let model = try await makeModelWithOverriddenSkill()
+        let skill = try overriddenRepoSkill(model, action: .removeCopy)
+        let (web, fix, folder) = (skill.repositoryID, skill.fix, skill.folder)
+
+        let outcome = await model.apply(fix, in: web)
+        guard case .failed = outcome else { return XCTFail("Expected a refusal, got \(outcome)") }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertTrue(model.fixRecords.isEmpty)
+    }
+
+    func testAnApprovedFixRunsRescansAndCanBeUndone() async throws {
+        defaults.set(true, forKey: PreferenceKey.allowsFixes)
+        let model = try await makeModelWithOverriddenSkill()
+        let skill = try overriddenRepoSkill(model, action: .removeCopy)
+        let (web, fix, folder) = (skill.repositoryID, skill.fix, skill.folder)
+
+        guard case .applied(let record) = await model.apply(fix, in: web) else { return XCTFail("The fix didn't run") }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertEqual(model.fixRecords.map(\.id), [record.id])
+        XCTAssertFalse(model.reports[web]?.items.contains { $0.kind == .skill && $0.scope == .project } ?? true, "Rescanned after the fix")
+        XCTAssertTrue(model.pendingChanges.contains { $0.change.kind == .deleted }, "The fix shows up in Review Changes like any other change")
+        XCTAssertTrue(record.backupPath.hasPrefix(model.fixBackupDirectory.path))
+
+        guard case .undone = await model.undo(record) else { return XCTFail("Undo didn't run") }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent("SKILL.md").path))
+    }
+
+    func testAFailedFixIsRememberedForTheItem() async throws {
+        defaults.set(true, forKey: PreferenceKey.allowsFixes)
+        let model = try await makeModelWithOverriddenSkill()
+        let skill = try overriddenRepoSkill(model, action: .replaceWithWinner)
+        let (web, fix, folder) = (skill.repositoryID, skill.fix, skill.folder)
+        try write("---\ndescription: Edited after review\n---\n", to: folder.appendingPathComponent("SKILL.md"))
+
+        guard case .failed = await model.apply(fix, in: web) else { return XCTFail("An edit after review must stop the fix") }
+        XCTAssertNotNil(model.failedFixes[fix.target.id], "The inspector shows the failure")
+        XCTAssertEqual(try String(contentsOf: folder.appendingPathComponent("SKILL.md"), encoding: .utf8), "---\ndescription: Edited after review\n---\n")
+    }
+
     // MARK: - Notifications
 
     /// A scanned model that announces through a recorder, with notifications turned on unless `enabled` is false.

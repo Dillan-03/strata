@@ -21,7 +21,10 @@ Claude Code keeps its user-level configuration in `~/.claude/` and `~/.claude.js
 What Strata does instead:
 
 - **Hardened runtime** is on for release builds (required for notarisation).
-- **Read-only.** v0.1 has no code path that writes to Claude Code configuration.
+- **Read-only by default.** The only code that writes Claude Code configuration is `ConfigWriter`, in StrataCore. It runs only when fixes are on and the user approves a fix. It refuses:
+    - anything outside `~/.claude` and the inspected repository's `.claude` folder
+    - anything reached through a symbolic link
+    - anything that changed since the fix was reviewed
 - **No network.** The app makes no network requests.
 - **No execution.** MCP server commands are displayed, never run.
 
