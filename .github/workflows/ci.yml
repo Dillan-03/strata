@@ -49,6 +49,17 @@ jobs:
       - name: Version script tests
         run: python3 scripts/next-version.test.py
 
+      # A pull request that leaves MARKETING_VERSION untagged releases that version when it merges, so check it now.
+      - name: Release check
+        run: |
+          version=$(grep -E '^\s+MARKETING_VERSION:' App/project.yml | head -1 | awk '{print $2}')
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+            echo "::notice title=Release check::v$version is already released, so merging this doesn't release anything."
+          else
+            echo "::notice title=Release check::Merging this releases $version."
+            scripts/next-version.py --check "$version"
+          fi
+
   core:
     name: Core (Linux)
     runs-on: ubuntu-24.04
