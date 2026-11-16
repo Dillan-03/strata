@@ -9,6 +9,8 @@ struct LaunchConfiguration {
     static let homeEnvironmentKey = "STRATA_UITEST_HOME"
 
     let isUITesting: Bool
+    /// True when the app is only hosting unit tests, which must not touch macOS notifications.
+    var isHostingUnitTests: Bool { ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil }
     let defaults: UserDefaults
     let initialRepository: URL?
     let homeOverride: URL?

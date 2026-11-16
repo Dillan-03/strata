@@ -4,6 +4,10 @@ import SwiftUI
 @main
 struct StrataApp: App {
     @State private var model: AppModel
+    /// Kept alive for the app's lifetime: it's the notification centre's delegate, which only holds it weakly.
+    private let notifications: SystemNotifications?
+    /// Settings read with @AppStorage come from here too, so UI tests keep theirs in a throwaway domain.
+    private let defaults: UserDefaults
 
     init() {
         let launch = LaunchConfiguration.current()
@@ -13,9 +17,18 @@ struct StrataApp: App {
         } else {
             environment = .current()
         }
+        defaults = launch.defaults
         let model = AppModel(store: RepositoryStore(defaults: launch.defaults), environment: environment)
         if let repository = launch.initialRepository {
             model.add(repository)
+        }
+        if launch.isUITesting || launch.isHostingUnitTests {
+            notifications = nil
+        } else {
+            let notifications = SystemNotifications()
+            notifications.onOpen = { [weak model] in model?.isReviewingChanges = true }
+            model.announcer = notifications
+            self.notifications = notifications
         }
         _model = State(initialValue: model)
     }
@@ -24,6 +37,7 @@ struct StrataApp: App {
         WindowGroup("Strata") {
             ContentView()
                 .environment(model)
+                .defaultAppStorage(defaults)
                 .frame(minWidth: 960, minHeight: 600)
         }
         .defaultSize(width: 1280, height: 800)
@@ -57,7 +71,8 @@ struct StrataApp: App {
         }
 
         Settings {
-            SettingsView()
+            SettingsView(notifications: notifications)
+                .defaultAppStorage(defaults)
         }
     }
 }

@@ -60,6 +60,10 @@ struct SidebarView: View {
                         } else {
                             Button("Reveal in Finder") { model.revealInFinder(repository.url) }
                             Button("Rescan") { Task { await model.scan(repository.id) } }
+                            Toggle("Notify About Changes", isOn: Binding(
+                                get: { model.notifiesAboutChanges(in: repository.id) },
+                                set: { model.setNotifiesAboutChanges($0, in: repository.id) }
+                            ))
                         }
                         Divider()
                         Button("Remove from Strata") { model.remove(repository.id) }
