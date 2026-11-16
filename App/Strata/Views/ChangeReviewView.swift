@@ -66,7 +66,8 @@ struct ChangeReviewSheet: View {
         .frame(minWidth: 820, idealWidth: 980, minHeight: 460, idealHeight: 620)
         .onAppear {
             let selected = model.selectedRepositoryID.map { model.changes(reaching: $0) } ?? []
-            selection = selected.first?.id ?? model.pendingChanges.first?.id
+            selection = model.reviewSelection ?? selected.first?.id ?? model.pendingChanges.first?.id
+            model.reviewSelection = nil
         }
     }
 

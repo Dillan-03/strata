@@ -38,6 +38,7 @@ final class ChangeReviewFlowTests: XCTestCase {
 
         let review = app.buttons["reviewChangesButton"]
         XCTAssertTrue(review.waitForExistence(timeout: 15), "The change banner didn't appear after the edit")
+        XCTAssertTrue(skillRow.label.contains("Changed since your last review"), "The list row doesn't show the change: \(skillRow.label)")
         review.click()
 
         let added = app.descendants(matching: .any)
