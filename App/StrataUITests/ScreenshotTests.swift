@@ -18,7 +18,7 @@ final class ScreenshotTests: XCTestCase {
         let (home, repository) = try makeFixture()
 
         let app = XCUIApplication()
-        app.launchArguments = ["-StrataUITesting"]
+        app.launchArguments = ["-allowsFixes", "YES", "-StrataUITesting"]
         app.launchEnvironment = [
             "STRATA_UITEST_REPOSITORY": repository.path,
             "STRATA_UITEST_HOME": home.path,
@@ -39,6 +39,13 @@ final class ScreenshotTests: XCTestCase {
         showRepoCopy.click()
         XCTAssertTrue(app.staticTexts["Which Copy Runs"].waitForExistence(timeout: 10))
         capture(window, as: "inspector")
+
+        let replace = app.buttons["fix.replaceWithWinner"]
+        XCTAssertTrue(replace.waitForExistence(timeout: 5), "The inspector doesn't offer to replace the overridden copy")
+        replace.click()
+        XCTAssertTrue(app.buttons["confirmFixButton"].waitForExistence(timeout: 10), "The fix review screen didn't open")
+        capture(window, as: "fix-review")
+        app.typeKey(.escape, modifierFlags: [])
 
         app.typeKey("4", modifierFlags: .command)
         let postgres = app.descendants(matching: .any).matching(identifier: "itemRow.mcpServer.project.postgres").firstMatch

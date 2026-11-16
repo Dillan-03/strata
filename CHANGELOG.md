@@ -22,6 +22,11 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
     - New session
     - Conflict
     - Unverified: the docs don't say when it applies
+- **Fixes for overridden copies**, off until you turn them on in Settings. When a skill, command or subagent in `~/.claude` or the repository's `.claude` folder is overridden, the inspector offers to remove it, or to replace it with the copy that runs. Before anything changes, a review screen shows:
+    - what happens, and every file involved
+    - a masked diff of the main file
+
+  Strata then checks that neither copy changed since you opened the review. It only ever writes inside those two folders, never through a symbolic link. Each fix keeps a backup in `~/Library/Application Support/Strata/Backups` and can be undone from the result screen or Settings, unless that would overwrite something new.
 - **Notifications for changes**, off until you turn them on in Settings:
     - edits that land within a few seconds of each other arrive as one notification, held back at most 30 seconds
     - each change is announced once until you review it

@@ -216,6 +216,34 @@ To show a diff, each scan keeps a masked copy of what defines each item (`ItemCo
     - secret flags in `args` are masked
 - A value that changed behind the mask is still reported, from a hash of the real value. The hash is never shown.
 
+### Fixing an overridden copy
+
+With fixes turned on in Settings, the inspector offers fixes for an overridden copy (`FixPlanner`). It does this only when:
+
+- the copy is a skill, command or subagent: things that are whole files or folders, unlike MCP servers and settings, which sit inside JSON files Claude Code also writes
+- it's in `~/.claude` or the inspected repository's `.claude` folder, never managed configuration, a plugin, a parent folder or another repository
+- nothing between that folder and the copy is a symbolic link
+
+The fixes:
+
+- **Remove this copy** moves it into `~/Library/Application Support/Strata/Backups`. A skill moves as its whole folder.
+- **Replace with the copy that runs** overwrites it with the winner, when the winner is the same kind and also in one of those two folders. The fix review screen says when this copies personal configuration into a repository, or the other way round.
+
+`ConfigWriter` is the only code that writes Claude Code configuration. Before it touches anything, it:
+
+- checks the target, and for a replacement the source, are inside those two folders and not reached through a symbolic link
+- refuses if either changed since the review screen opened, compared by a hash of every file
+- backs the target up
+
+A replacement is copied in beside the target and swapped in by renaming, so a failure part-way puts the original back.
+
+**Undo** puts the backup back, but refuses if:
+
+- something new is where a removed copy was
+- a replaced copy was edited after the fix
+
+A running Claude Code session may keep using the old copy until it reloads, as with any other change.
+
 ### Status since the last review
 
 Every item gets a status from its pending change and the problems Strata reports for it now (`SyncStatus`):

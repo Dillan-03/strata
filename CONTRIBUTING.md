@@ -1,10 +1,10 @@
 # Contributing to Strata
 
-Thanks for helping. Strata is a small, read-only macOS tool, and the bar for changes is that they keep it accurate, fast and safe.
+Thanks for helping. Strata is a small macOS tool that's read-only by default, and the bar for changes is that they keep it accurate, fast and safe.
 
 ## Ground rules
 
-- **Read-only by default.** Nothing in v0.1 writes to Claude Code configuration. Anything that writes belongs behind the opt-in sync service planned for v0.2.
+- **Read-only by default.** Only `ConfigWriter` writes Claude Code configuration, behind the off-by-default fixes setting and an approval for every write. Anything new that writes goes through it, with its checks, backups and undo.
 - **Cite the docs.** Every rule about how Claude Code loads or overrides config must match [docs/configuration-resolution.md](docs/configuration-resolution.md), which links each rule to the official documentation. If the docs don't say, Strata shows "unknown" rather than guessing.
 - **No secrets anywhere.** Not in code, fixtures, logs, screenshots or test output. Fixtures use obviously fake values.
 - **No new dependencies** without an issue explaining why Foundation, SwiftUI or AppKit can't do the job.

@@ -3,7 +3,7 @@
 ## What Strata does with your data
 
 - Reads Claude Code configuration files on your Mac: `~/.claude/`, `~/.claude.json`, and the repositories you add.
-- Never writes to them in v0.1.
+- Never writes to them unless you turn on fixes in Settings. Then it writes only the fix you approve, only inside `~/.claude` or the inspected repository's `.claude` folder, never through a symbolic link, and only if neither copy changed since you reviewed it. Every fix keeps a backup in `~/Library/Application Support/Strata/Backups` and can be undone.
 - Never sends anything over the network. No accounts, analytics or telemetry.
 - Never runs MCP server commands or contacts MCP servers.
 - Masks secrets (tokens, API keys, passwords, header values, environment values) before showing anything in the UI.

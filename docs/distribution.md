@@ -34,6 +34,8 @@ The cask is only usable once `Casks/strata-inspector.rb` exists on `main`. The R
 
 Neither ever touches `~/.claude`, `~/.claude.json`, managed settings, plugins, MCP configuration, instruction files, or your repositories. The release pipeline checks this on every build (see below).
 
+`--zap` also leaves `~/Library/Application Support/Strata/Backups` alone. Those are the only copies of anything a fix removed, so deleting them is your call.
+
 ## Signed and unsigned builds
 
 Release notes always say which kind of build a release is.

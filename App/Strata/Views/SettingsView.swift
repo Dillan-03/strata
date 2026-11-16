@@ -4,10 +4,15 @@ import UserNotifications
 
 enum PreferenceKey {
     static let autoRefresh = "autoRefresh"
+    /// Off by default: Strata only reads configuration until this is turned on.
+    static let allowsFixes = "allowsFixes"
 }
 
 struct SettingsView: View {
+    @Environment(AppModel.self) private var model
     let notifications: SystemNotifications?
+    @AppStorage(PreferenceKey.allowsFixes) private var allowsFixes = false
+    @State private var undoOutcome: FixOutcome?
     @AppStorage(PreferenceKey.autoRefresh) private var autoRefresh = true
     @AppStorage(NotificationPreferences.enabledKey) private var notifyAboutChanges = false
     @AppStorage(NotificationPreferences.pausedUntilKey) private var pausedUntil: Double = 0
@@ -54,8 +59,38 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            Section("Fixes") {
+                Toggle("Let Strata fix overridden copies", isOn: $allowsFixes)
+                    .accessibilityIdentifier("allowsFixesToggle")
+                Text(
+                    "Off by default. When it's on, a skill, command or subagent in ~/.claude or a repository's .claude folder that "
+                        + "another copy overrides can be removed, or replaced with the copy that runs. Every fix shows you what it will "
+                        + "change first, keeps a backup, and can be undone here."
+                )
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(model.fixRecords.prefix(10)) { record in
+                    LabeledContent {
+                        if record.undoneAt == nil {
+                            Button("Undo") { Task { undoOutcome = await model.undo(record) } }
+                        } else {
+                            Text("Undone").foregroundStyle(.secondary)
+                        }
+                    } label: {
+                        Text(record.summary)
+                        Text(model.abbreviatingHome(record.targetPath))
+                    }
+                }
+                if !model.fixRecords.isEmpty {
+                    Button("Show Backups in Finder") { model.revealInFinder(model.fixBackupDirectory) }
+                }
+            }
             Section("Privacy") {
-                Text("Strata only reads files. It never changes Claude Code configuration, runs MCP servers, or connects to the network.")
+                Text(
+                    "Strata only reads files unless you turn on fixes, and then it only changes what you approve. "
+                        + "It never runs MCP servers or connects to the network."
+                )
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -66,6 +101,12 @@ struct SettingsView: View {
         .fixedSize(horizontal: false, vertical: true)
         .task {
             authorization = await notifications?.authorizationStatus()
+            model.reloadFixRecords()
+        }
+        .alert(undoOutcome?.title ?? "", isPresented: Binding(get: { undoOutcome != nil }, set: { if !$0 { undoOutcome = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(undoOutcome?.message ?? "")
         }
     }
 
