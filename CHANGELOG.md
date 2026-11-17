@@ -7,6 +7,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 ### Added
 
 - **Permission rules** as their own items under Settings: every `allow`, `ask` and `deny` rule, extra directory and `defaultMode`, with the file that sets it. Rules a deny or ask rule certainly beats show as Overridden, repository allow rules that wait for workspace trust show as Conditional, and new allow rules get a security note in Review Changes.
+- **Context at launch**: an estimate of how many tokens a repository's instruction files, skill listing and subagent descriptions take before your first message, in the summary bar, with a breakdown, the largest pieces, and each item's share in the inspector. It warns at the thresholds Claude Code documents, a CLAUDE.md over 200 lines and subagent descriptions over 15,000 tokens, and says plainly what it can't count.
 
 ## [0.4.0] - 2026-11-17
 

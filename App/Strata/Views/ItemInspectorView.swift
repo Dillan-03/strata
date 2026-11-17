@@ -219,6 +219,10 @@ private struct ItemDetail: View {
                 LabeledContent("Stage", value: item.stage.title)
             }
             LabeledContent("Loads", value: item.loadTiming.title)
+            if let characters = ContextEstimate.characters(of: item) {
+                LabeledContent("At launch", value: "≈\(ContextEstimateSheet.format(ContextEstimate.tokens(characters))) tokens (estimate)")
+                    .help("Characters ÷ \(ContextEstimate.charactersPerToken). Claude Code doesn't document its tokenizer.")
+            }
         }
     }
 

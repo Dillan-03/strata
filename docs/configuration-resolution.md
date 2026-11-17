@@ -150,6 +150,23 @@ Not covered:
 - **Rules added in a session with `/permissions`** that aren't saved to a file.
 - **Whether a rule matches a particular call.**
 
+## Context at launch
+
+Strata estimates how much context a repository's configuration takes before the first message (`ContextEstimate`).
+
+- **Counted:**
+  - **Instruction files that load at launch:** CLAUDE.md and CLAUDE.local.md in the repository and the folders above it, rules without `paths`, and what they import. Subdirectory CLAUDE.md files and path-scoped rules load later, when Claude touches a matching file, so they aren't counted. ([How CLAUDE.md files load](https://code.claude.com/docs/en/memory#how-claude-md-files-load))
+  - **The skill listing:** each skill's name, description and `when_to_use`. The skill's body loads only when it's invoked, so it isn't counted. Skills with `disable-model-invocation` aren't listed for Claude, so they don't count either. Claude Code trims the listing to fit a budget, so the real figure can be lower. ([Skills](https://code.claude.com/docs/en/skills))
+  - **Subagent descriptions.** ([Automatic delegation](https://code.claude.com/docs/en/sub-agents#understand-automatic-delegation))
+- **Not counted:**
+  - MCP tools, which are deferred by default, so only their names load, and Strata never runs a server to list them ([tool search](https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search))
+  - Claude Code's own system prompt
+  - auto memory
+- **Tokens are characters ÷ 4,** labelled as an estimate everywhere, because the docs don't document the tokenizer. `/context` in a session gives Claude Code's own count.
+- **Warnings** appear only at documented thresholds:
+  - a CLAUDE.md over 200 lines, from Claude Code's guidance to keep each one under 200
+  - subagent descriptions over 15,000 tokens, where Claude Code itself warns at startup
+
 ## Instructions (CLAUDE.md, rules, AGENTS.md)
 
 Source: [Memory](https://code.claude.com/docs/en/memory.md).
