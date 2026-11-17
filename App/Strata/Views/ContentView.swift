@@ -41,6 +41,10 @@ struct ContentView: View {
             FixReviewSheet(fix: fix, repositoryID: model.selectedRepositoryID)
                 .environment(model)
         }
+        .sheet(isPresented: $model.isCheckingPluginUpdates) {
+            PluginUpdatesSheet()
+                .environment(model)
+        }
     }
 }
 

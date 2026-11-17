@@ -92,7 +92,7 @@ struct SettingsView: View {
                 Text(
                     "Strata only reads files unless you turn on changes, and then it only changes what you approve. "
                         + "It never runs MCP servers. Its only network request is Check for Updates, one request to GitHub "
-                        + "made only when you click it."
+                        + "made only when you click it. It never contacts plugin marketplaces."
                 )
                     .font(.callout)
                     .foregroundStyle(.secondary)

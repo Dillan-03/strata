@@ -12,6 +12,7 @@ final class AppModel {
     /// Changes since the last review, across every scanned repository.
     private(set) var pendingChanges: [PendingChange] = []
     var isReviewingChanges = false
+    var isCheckingPluginUpdates = false
     /// The change Review Changes opens on, when it's opened from one item.
     var reviewSelection: PendingChange.ID?
     /// A fix waiting for approval on the fix review screen.
@@ -207,6 +208,15 @@ final class AppModel {
     func changeOffer(for item: ConfigItem) -> FixOffer {
         guard let report = selectedReport else { return .none }
         return FixPlanner.change(for: item, in: report, environment: environment)
+    }
+
+    /// Installed and offered versions, from the marketplace copies on disk. Never fetches anything.
+    func pluginUpdate(for item: ConfigItem) -> PluginUpdate? {
+        PluginUpdates.check(item, environment: environment)
+    }
+
+    var marketplaces: [Marketplace] {
+        PluginUpdates.marketplaces(environment: environment)
     }
 
     /// Selects the item and opens the review for its change. If Strata can't make it, the inspector says why.
