@@ -216,4 +216,20 @@ final class InspectionFlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Keybindings (1)"].waitForExistence(timeout: 10), "Settings doesn't list the keybinding")
         XCTAssertTrue(app.staticTexts["Output Styles (1)"].exists, "Settings doesn't list the output style")
     }
+
+    func testExportReportOpensFromTheInspectMenu() throws {
+        let fixture = try makeFixture()
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["issuesSummary"].waitForExistence(timeout: 20))
+        app.typeKey("e", modifierFlags: [.command, .shift])
+        XCTAssertTrue(app.buttons["saveReportButton"].waitForExistence(timeout: 10), "Export Report didn't open")
+        app.buttons["Cancel"].click()
+    }
 }
