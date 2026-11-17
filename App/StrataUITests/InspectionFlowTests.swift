@@ -88,7 +88,21 @@ final class InspectionFlowTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "filterChip.clear").firstMatch.exists)
 
         // XCUITest can't read a menu item's tick, so prove it's shared: choosing Overridden in the menu turns it off.
-        app.descendants(matching: .any).matching(identifier: "filterMenu").firstMatch.click()
+        let filterMenu = app.descendants(matching: .any).matching(identifier: "filterMenu").firstMatch
+        if filterMenu.exists {
+            filterMenu.click()
+        } else {
+            // CI's screen is narrow enough that the toolbar moves Filter into its overflow menu, as a submenu.
+            let toolbar = app.toolbars.firstMatch
+            let overflow = toolbar.descendants(matching: .any).matching(
+                NSPredicate(format: "identifier CONTAINS[c] 'clipped' OR identifier CONTAINS[c] 'overflow' OR label CONTAINS[c] 'more'")
+            ).firstMatch
+            XCTAssertTrue(overflow.exists, "No Filter menu or overflow button in the toolbar:\n\(toolbar.debugDescription)")
+            overflow.click()
+            let filterItem = app.menuItems["Filter"]
+            XCTAssertTrue(filterItem.waitForExistence(timeout: 5), "No Filter in the overflow menu:\n\(app.menus.firstMatch.debugDescription)")
+            filterItem.hover()
+        }
         let menuItem = app.menuItems["Overridden"]
         XCTAssertTrue(menuItem.waitForExistence(timeout: 5))
         menuItem.click()
