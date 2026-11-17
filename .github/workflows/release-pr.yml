@@ -23,8 +23,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      # Starts CI on the release PR.
-      actions: write
     env:
       BRANCH: release/next
       GH_TOKEN: ${{ github.token }}
@@ -62,6 +60,8 @@ jobs:
           title="[Chore] Release $version"
           body="Merging this releases **$version**. The Release workflow then tags \`v$version\`, builds, signs, notarises and publishes it, and opens the Homebrew cask PR.
 
+          GitHub holds CI on PRs opened by the workflow token, so click **Approve workflows to run** on this PR, then merge once it's green.
+
           This branch is rebuilt from \`main\` after every merge, so don't edit it. To change what ships, edit \`## [Unreleased]\` in \`CHANGELOG.md\` in a normal PR.
 
           $notes"
@@ -71,6 +71,4 @@ jobs:
           else
             gh pr create --base main --head "$BRANCH" --title "$title" --body "$body"
           fi
-          # Events from the workflow token don't start other workflows, except workflow_dispatch. Its checks count as the PR's.
-          gh workflow run ci.yml --ref "$BRANCH"
-          echo "::notice title=Release PR::$title is up to date with main, and CI is running on it."
+          echo "::notice title=Release PR::$title is up to date with main. Its CI run waits for approval on the PR."

@@ -23,12 +23,11 @@ Nobody edits `MARKETING_VERSION`, moves changelog entries or pushes tags. Mergin
 1. Merge PRs as normal, each with its line under `## [Unreleased]`. Nothing ships. After each merge, `.github/workflows/release-pr.yml` opens or updates one `[Chore] Release <version>` PR from the `release/next` branch. It:
    - sets `MARKETING_VERSION` to the version `scripts/next-version.py` calls for, and bumps `CURRENT_PROJECT_VERSION`
    - moves the Unreleased entries under `## [<version>] - <date>`, with a release link
-   - starts CI on it with `workflow_dispatch`, because PRs opened by the workflow token don't trigger CI by themselves
 
    The branch is rebuilt from `main` after every merge, so it's always up to date and the version always covers everything merged. Don't edit it: change `## [Unreleased]` in a normal PR instead. To refresh the release date, run **Actions → Release PR → Run workflow**.
 
    CI's **Release check** says what each PR does: "Merging this updates the Release <version> PR" on a normal PR, and "Merging this releases <version>" on the release PR.
-2. When you want to ship, merge the release PR once CI is green. The push to `main` starts `.github/workflows/release.yml`, which runs these jobs in order. Each starts only if the one before it passed.
+2. When you want to ship, click **Approve workflows to run** on the release PR, then approve and merge it once CI is green. GitHub holds CI on PRs opened by the workflow token until someone approves it, and the PR can't merge without those checks. The push to `main` starts `.github/workflows/release.yml`, which runs these jobs in order. Each starts only if the one before it passed.
    - **Plan** (Linux): sees that `v<version>` isn't released yet, so this push is a release. It checks:
      - the commit is on `main`
      - the version isn't already published
@@ -41,8 +40,8 @@ Nobody edits `MARKETING_VERSION`, moves changelog entries or pushes tags. Mergin
    - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip
    - **publish** (Linux, write token):
      - creates the GitHub Release and its `v<version>` tag on the merged commit. It's a pre-release when unsigned.
-     - opens a `[Chore] Update Homebrew cask to <version>` PR and starts CI on it
-3. Merge the cask PR once it's green. Homebrew users don't see the release until you do.
+     - opens a `[Chore] Update Homebrew cask to <version>` PR
+3. On the cask PR, click **Approve workflows to run**, then approve and merge it once it's green. Homebrew users don't see the release until you do.
 4. Check the release:
 
    ```bash
