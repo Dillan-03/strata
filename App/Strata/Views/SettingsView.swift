@@ -86,10 +86,12 @@ struct SettingsView: View {
                     Button("Show Backups in Finder") { model.revealInFinder(model.fixBackupDirectory) }
                 }
             }
+            AboutSection()
             Section("Privacy") {
                 Text(
                     "Strata only reads files unless you turn on fixes, and then it only changes what you approve. "
-                        + "It never runs MCP servers or connects to the network."
+                        + "It never runs MCP servers. Its only network request is Check for Updates, one request to GitHub "
+                        + "made only when you click it."
                 )
                     .font(.callout)
                     .foregroundStyle(.secondary)

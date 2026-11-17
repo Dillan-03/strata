@@ -25,7 +25,7 @@ What Strata does instead:
     - anything outside `~/.claude` and the inspected repository's `.claude` folder
     - anything reached through a symbolic link
     - anything that changed since the fix was reviewed
-- **No network.** The app makes no network requests.
+- **One network request, on click.** **Check for Updates** in Settings sends one GET to GitHub's latest-release API through an ephemeral `URLSession` (no cookies, cache or stored credentials). Nothing runs in the background. StrataCore's `UpdateChecker` parses the reply and builds the release link from the version, never from the response. The app never downloads or installs anything.
 - **No execution.** MCP server commands are displayed, never run.
 
 ## Generated project

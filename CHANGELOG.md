@@ -7,6 +7,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 ### Added
 
 - **Filter chips** above the item list for status, scope and Has Issues. Each shows how many items it would show, chips that match nothing are hidden, and they share their state with the Filter menu.
+- **About** in Settings, with Strata's version and build, and a **Check for Updates** button. It makes one request to GitHub for the latest release, only when you click. If there's a newer version, it shows a link to the release notes and the `brew upgrade` command to copy. Strata still never downloads or installs anything.
 
 ## [0.2.0] - 2026-11-16
 
