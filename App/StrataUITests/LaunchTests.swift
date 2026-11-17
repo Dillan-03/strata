@@ -41,6 +41,9 @@ final class LaunchTests: XCTestCase {
         let skill = repository.appendingPathComponent(".claude/skills/deploy/SKILL.md")
         try FileManager.default.createDirectory(at: skill.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("---\ndescription: Deploy\n---\n".utf8).write(to: skill)
+        let personal = home.appendingPathComponent(".claude/skills/tidy/SKILL.md")
+        try FileManager.default.createDirectory(at: personal.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("---\ndescription: Tidy\n---\n".utf8).write(to: personal)
         let projects = [repository.path: [String: String](), home.appendingPathComponent("code/gone-repo").path: [:]]
         try JSONSerialization.data(withJSONObject: ["projects": projects]).write(to: home.appendingPathComponent(".claude.json"))
 
@@ -56,5 +59,10 @@ final class LaunchTests: XCTestCase {
 
         let row = app.descendants(matching: .any).matching(identifier: "itemRow.skill.project.deploy").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 20), "Adding the suggestion didn't scan it")
+
+        let personalRow = app.descendants(matching: .any).matching(identifier: "itemRow.skill.user.tidy").firstMatch
+        XCTAssertFalse(personalRow.exists, "A newly added repository shows personal items before its own are filtered")
+        app.buttons["filterChip.clear"].click()
+        XCTAssertTrue(personalRow.waitForExistence(timeout: 5), "Clearing the filter doesn't bring back personal items")
     }
 }
