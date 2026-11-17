@@ -64,7 +64,7 @@ Tests build their fixtures in code with the helpers in `Tests/StrataCoreTests/Su
 
 ## Screenshots
 
-`ScreenshotTests` is a UI test that is skipped unless `STRATA_SCREENSHOTS=1` is set. The Screenshots workflow sets it, captures the window against a made-up configuration, and force-pushes the images to the `screenshots` branch, which the README embeds. It runs only on pushes to `main`, not on pull requests, to save macOS runners. To see a branch's screenshots before merging, run it by hand from **Actions → Screenshots → Run workflow** on that branch. Only `main` publishes, so a branch run keeps its images as a workflow artifact for 14 days.
+`ScreenshotTests` is a UI test that is skipped unless `STRATA_SCREENSHOTS=1` is set. The Screenshots workflow sets it, captures the window against a made-up configuration, and force-pushes the images to the `screenshots` branch, which the README embeds. The Release workflow starts it on the new `v<version>` tag after publishing a release, so the README shows what Homebrew installs, and it never needs a macOS runner while a release is building. It doesn't run on pushes or pull requests. To see a branch's screenshots, run it by hand from **Actions → Screenshots → Run workflow** on that branch. Only a `v` tag publishes, so a branch run, `main` included, keeps its images as a workflow artifact for 14 days. To republish a release's screenshots, run it on that release's tag.
 
 ## What tests can't prove
 

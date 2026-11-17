@@ -1,14 +1,10 @@
 name: Screenshots
 
-# Captures the README screenshots from the real app and publishes them to an orphan branch, so they always match main
-# without committing images to its history. It doesn't run on pull requests, to save macOS runners.
+# Captures the README screenshots from the real app and publishes them to an orphan branch, so they always show the
+# latest release without committing images to its history. The Release workflow starts it on the new tag once a release
+# is published. It runs after the build, so it never competes with Release for a macOS runner.
+# GitHub doesn't start workflows on a release the workflow token creates, so `release: published` would never fire.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "App/**"
-      - "Packages/**"
-      - ".github/workflows/screenshots.yml"
   workflow_dispatch:
 
 permissions:
@@ -88,9 +84,9 @@ jobs:
           print("::notice title=Screenshots::Captured " + ", ".join(sorted(found)))
           EOF
 
-      # A manual run on another branch keeps its screenshots as an artifact, so unmerged UI never replaces the README's.
+      # A manual run on a branch, main included, keeps its screenshots as an artifact, so unreleased UI never replaces the README's.
       - name: Keep screenshots from a branch
-        if: github.ref != 'refs/heads/main'
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: screenshots-${{ github.sha }}
@@ -98,7 +94,7 @@ jobs:
           retention-days: 14
 
       - name: Publish
-        if: github.ref == 'refs/heads/main'
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: screenshots
