@@ -54,11 +54,13 @@ final class PluginUpdateFlowTests: XCTestCase {
 
         let status = app.descendants(matching: .any).matching(identifier: "pluginUpdateStatus").firstMatch
         XCTAssertTrue(status.waitForExistence(timeout: 10), "The inspector doesn't show the plugin's update status")
-        XCTAssertTrue(status.label.contains("update is available"), "Status was: \(status.label)")
-        // macOS puts a static text's string in its value; only text values are strings.
-        let command = "claude plugin update kit@tools --scope user"
-        let byLabel = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", command)).firstMatch
-        let byValue = app.staticTexts.matching(NSPredicate(format: "value == %@", command)).firstMatch
-        XCTAssertTrue(byLabel.exists || byValue.exists, "The update command isn't shown")
+        XCTAssertTrue(shows("An update is available.", in: app), "The status isn't 'An update is available.'")
+        XCTAssertTrue(shows("claude plugin update kit@tools --scope user", in: app), "The update command isn't shown")
+    }
+
+    /// macOS puts a static text's string in its value and a label's in its label. Only text values are strings.
+    private func shows(_ text: String, in app: XCUIApplication) -> Bool {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", text)).firstMatch.exists
+            || app.staticTexts.matching(NSPredicate(format: "value == %@", text)).firstMatch.exists
     }
 }
