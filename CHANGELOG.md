@@ -10,6 +10,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 - **About** in Settings, with Strata's version and build, and a **Check for Updates** button. It makes one request to GitHub for the latest release, only when you click. If there's a newer version, it shows a link to the release notes and the `brew upgrade` command to copy. Strata still never downloads or installs anything.
 - **Uninstall…** for skills, commands and subagents in `~/.claude` or the repository's `.claude` folder, in the inspector and the list's context menu. The review says which copy runs instead, if any, and when a running Claude Code session stops seeing it. Like fixes, it keeps a backup and can be undone. Plugin, managed and claude.ai items aren't offered, with the reason why.
 - **Disable / Enable** a plugin, by flipping its `enabledPlugins` entry in the settings file that decides it, and **Remove** an MCP server from `.mcp.json` or `~/.claude.json`. Only that entry changes; the rest of the file, including what Claude Code writes to `~/.claude.json`, is left as it was, and undo reverses just that entry. To uninstall a plugin, Strata shows the `claude plugin uninstall` command to copy.
+- **Plugin updates**: each marketplace plugin's installed version next to the version in its marketplace copy on your Mac, in the inspector and in **Inspect → Check for Plugin Updates…**. It shows the `claude plugin marketplace update` and `claude plugin update` commands to copy, with the sources they contact. Strata itself never fetches anything.
 
 ### Changed
 

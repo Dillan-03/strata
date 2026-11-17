@@ -28,6 +28,7 @@ private struct ItemDetail: View {
             statusSection
             fixSection
             uninstallSection
+            pluginUpdateSection
             whySection
             definitionsSection
             kindSpecificSections
@@ -170,6 +171,32 @@ private struct ItemDetail: View {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    /// Versions from the marketplace copy on disk. Strata never fetches; the commands it shows do.
+    @ViewBuilder private var pluginUpdateSection: some View {
+        if let update = model.pluginUpdate(for: item) {
+            Section("Updates") {
+                LabeledContent("Installed", value: update.installed ?? "Unknown")
+                LabeledContent("In the marketplace copy", value: update.latest ?? "Unknown")
+                switch update.status {
+                case .upToDate:
+                    Label("Up to date with the marketplace copy on this Mac.", systemImage: "checkmark.circle")
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("pluginUpdateStatus")
+                case .available:
+                    Label("An update is available.", systemImage: "arrow.down.circle")
+                        .accessibilityIdentifier("pluginUpdateStatus")
+                    CommandRow(note: "To update, run this in Terminal. It applies after /reload-plugins or in a new session.", command: update.command)
+                case .unknown(let reason):
+                    Text(reason)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("pluginUpdateStatus")
+                }
+                Button("Check for Plugin Updates…") { model.isCheckingPluginUpdates = true }
             }
         }
     }

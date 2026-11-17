@@ -276,6 +276,24 @@ Plugin settings and MCP servers live in JSON files that Claude Code also writes,
 
 A plugin change applies after `/reload-plugins` or in a new session. The docs don't say whether a running session picks up an edit to MCP configuration, so Strata says so. ([check which stage a plugin reached](https://code.claude.com/docs/en/plugins/loading#check-which-stage-a-plugin-reached))
 
+### Plugin updates
+
+Strata shows each marketplace plugin's installed version next to the version its marketplace copy on this Mac offers (`PluginUpdates`). It never fetches anything.
+
+- **Installed:** the plugin's manifest `version`, or the version `~/.claude/plugins/installed_plugins.json` records. ([find plugins on disk](https://code.claude.com/docs/en/plugins/loading#find-plugins-on-disk))
+- **Offered:**
+  - Strata finds the marketplace's copy through `known_marketplaces.json` (`installLocation`, or `~/.claude/plugins/marketplaces/<name>/`) and reads `.claude-plugin/marketplace.json`.
+  - Like Claude Code, it takes the plugin's own manifest `version` first, for an entry whose source is a folder in the marketplace, then the entry's `version`. A source path that leaves the marketplace folder isn't read.
+  - Without either, Claude Code compares commits, which Strata can't see, so it says so. ([how Claude Code computes the version](https://code.claude.com/docs/en/plugins/loading#how-claude-code-computes-the-version))
+- **Comparing:** versions that both parse are compared by Semantic Versioning. Two other strings, such as commit hashes, count as an update when they differ.
+
+Updating stays with Claude Code. **Check for Plugin Updates…** shows, to copy:
+
+- `claude plugin marketplace update`, with the marketplace sources it contacts. It refreshes every marketplace's listing and leaves installed plugins as they are.
+- `claude plugin update <id> --scope <scope>` for each plugin with an update. There's no command that updates every plugin at once, so **Copy All** copies one per line.
+
+When the commands change files, Strata rescans. Review Changes then shows what changed: the version, and the plugin's skills, subagents, commands and MCP servers. An update applies after `/reload-plugins` or in a new session. ([plugin update](https://code.claude.com/docs/en/plugins/cli-reference#plugin-update), [update plugins now](https://code.claude.com/docs/en/plugins/install#update-plugins-now))
+
 ### Status since the last review
 
 Every item gets a status from its pending change and the problems Strata reports for it now (`SyncStatus`):

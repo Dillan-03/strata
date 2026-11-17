@@ -61,6 +61,11 @@ struct StrataApp: App {
                 .keyboardShortcut("r", modifiers: [.command, .shift])
                 .disabled(model.pendingChanges.isEmpty)
 
+                Button("Check for Plugin Updates…") {
+                    model.isCheckingPluginUpdates = true
+                }
+                .disabled(model.selectedReport == nil)
+
                 Divider()
 
                 ForEach(Category.allCases) { category in
