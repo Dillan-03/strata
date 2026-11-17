@@ -91,8 +91,11 @@ final class FixFlowTests: XCTestCase {
 
         let confirm = app.buttons["confirmFixButton"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10), "The uninstall review didn't open")
-        let takesOver = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "the repo copy runs instead", "the repo copy runs instead")).firstMatch
-        XCTAssertTrue(takesOver.exists, "The review should say the repository copy takes over")
+        // macOS puts a static text's string in its value; other elements use the label. Only text values are strings.
+        let phrase = "the repo copy runs instead"
+        let byLabel = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", phrase)).firstMatch
+        let byValue = app.staticTexts.matching(NSPredicate(format: "value CONTAINS %@", phrase)).firstMatch
+        XCTAssertTrue(byLabel.exists || byValue.exists, "The review should say the repository copy takes over")
         XCTAssertTrue(FileManager.default.fileExists(atPath: personal.path), "Nothing changes before confirming")
         confirm.click()
 
