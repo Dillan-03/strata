@@ -21,7 +21,7 @@ Strata only reads Claude Code configuration unless you turn on **changes** in Se
 
 ![Review Changes: a global skill's description edited, shown as a line diff, picked up live by Claude Code](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/review.png)
 
-Screenshots are captured from the real app by CI whenever the app changes on `main`, using made-up configuration.
+Screenshots are captured from the real app by CI for each release, using made-up configuration.
 
 ## Requirements
 

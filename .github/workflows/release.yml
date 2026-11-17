@@ -229,6 +229,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
+      actions: write
       contents: write
       pull-requests: write
     env:
@@ -296,3 +297,14 @@ jobs:
             exit 0
           fi
           echo "::notice title=Cask PR::Opened. Its CI run waits for approval on the PR."
+
+      - name: Refresh the README screenshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The release is already published, so screenshots that can't be started are a warning, not a failure.
+          if ! gh workflow run screenshots.yml -R "$GITHUB_REPOSITORY" --ref "v$VERSION"; then
+            echo "::warning title=Screenshots not started::Run Actions → Screenshots → Run workflow on the v$VERSION tag by hand."
+            exit 0
+          fi
+          echo "::notice title=Screenshots::Started on v$VERSION."

@@ -41,6 +41,7 @@ Nobody edits `MARKETING_VERSION`, moves changelog entries or pushes tags. Mergin
    - **publish** (Linux, write token):
      - creates the GitHub Release and its `v<version>` tag on the merged commit. It's a pre-release when unsigned.
      - opens a `[Chore] Update Homebrew cask to <version>` PR
+     - starts the Screenshots workflow on the new tag, which refreshes the README screenshots
 3. On the cask PR, click **Approve workflows to run**, then approve and merge it once it's green. Homebrew users don't see the release until you do.
 4. Check the release:
 
