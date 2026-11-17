@@ -67,9 +67,10 @@ struct SettingsView: View {
                     .accessibilityIdentifier("allowsFixesToggle")
                 Text(
                     "Off by default. When it's on, Strata can uninstall a skill, command or subagent, remove an overridden copy or "
-                        + "replace it with the copy that runs, disable or enable a plugin, and remove an MCP server. It only edits "
+                        + "replace it with the copy that runs, disable, enable or uninstall a plugin, and remove an MCP server. It only edits "
                         + "~/.claude, ~/.claude.json, and a repository's .claude folder and .mcp.json. Every change shows you what it "
-                        + "will do first, keeps a backup, and can be undone here."
+                        + "will do first, keeps a backup, and can be undone here. Uninstalling a plugin runs claude plugin uninstall "
+                        + "instead, which Claude Code can't undo, so Strata shows the reinstall command."
                 )
                     .font(.callout)
                     .foregroundStyle(.secondary)

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// A command for the user to run in Terminal, with a button that copies it. Strata never runs it.
+/// A command for the user to run in Terminal, with a button that copies it.
 struct CommandRow: View {
     var note: String?
     let command: String
