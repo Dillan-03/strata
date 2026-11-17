@@ -81,15 +81,6 @@ Every precedence rule Strata applies is written down, with a link to the Claude 
 - Workspace trust is stored in an undocumented form, so anything that depends on trust is shown as **Conditional**, not resolved.
 - When the Claude Code documentation doesn't settle a rule, Strata shows **Unknown** rather than guessing.
 
-## Manual setup required
-
-These need the repository owner and can't be done by automation. Each issue has the exact steps.
-
-| Issue | What | Blocks |
-| --- | --- | --- |
-| [#21](https://github.com/Dillan-03/strata/issues/21) | Branch protection and repository settings, including letting Actions open PRs | Enforced CI on `main`; the automatic release PR and cask PR |
-| [#22](https://github.com/Dillan-03/strata/issues/22) | Apple Developer ID certificate and App Store Connect API key as repository secrets | Signed, notarised releases |
-
 ## Development
 
 ```bash
