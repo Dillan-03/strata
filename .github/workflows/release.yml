@@ -231,8 +231,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      # Starts CI on the cask PR.
-      actions: write
     env:
       VERSION: ${{ needs.plan.outputs.version }}
     steps:
@@ -291,12 +289,10 @@ jobs:
           git add Casks/strata-inspector.rb
           git commit -m "[Chore] Update Homebrew cask to $VERSION"
           git push origin "$branch"
-          body="Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow. Merge it once CI passes so Homebrew users get v$VERSION."
+          body="Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow. GitHub holds CI on PRs opened by the workflow token, so click **Approve workflows to run** on this PR, then merge once it's green so Homebrew users get v$VERSION."
           # The release is already published, so a PR that can't be opened is a warning with a manual next step, not a failure.
           if ! gh pr create --base main --head "$branch" --title "[Chore] Update Homebrew cask to $VERSION" --body "$body"; then
             echo "::warning title=Cask PR not opened::Branch $branch is pushed with the updated cask, but the pull request couldn't be opened. Open one from $branch to main by hand."
             exit 0
           fi
-          # Events from the workflow token don't start other workflows, except workflow_dispatch. Its checks count as the PR's.
-          gh workflow run ci.yml --ref "$branch"
-          echo "::notice title=Cask PR::Opened and CI started. Merge it once it's green."
+          echo "::notice title=Cask PR::Opened. Its CI run waits for approval on the PR."
