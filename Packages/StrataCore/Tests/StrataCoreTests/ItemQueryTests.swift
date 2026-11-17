@@ -115,6 +115,23 @@ final class ItemQueryTests: XCTestCase {
         XCTAssertEqual(ItemQuery().apply(to: report.diagnostics), report.diagnostics)
     }
 
+    func testIssueCountFollowsScopeAndStatusFilters() {
+        let all = ItemQuery().issues(in: report)
+        XCTAssertEqual(all, report.diagnostics.filter { $0.severity != .info })
+        XCTAssertEqual(ItemQuery(text: "nothing-like-this").issues(in: report), all, "Typing a search doesn't change the count")
+
+        let named = all.filter { !$0.itemIDs.isEmpty }
+        let unnamed = all.filter(\.itemIDs.isEmpty)
+        func names(_ query: ItemQuery) -> Set<String> {
+            Set(query.issues(in: report).filter { !$0.itemIDs.isEmpty }.flatMap(\.itemIDs).compactMap { report.item(withID: $0)?.name })
+        }
+        XCTAssertEqual(names(ItemQuery(scopes: [.project])), ["deploy", "broken"])
+        XCTAssertEqual(names(ItemQuery(statuses: [.wontLoad])), ["broken"])
+        XCTAssertTrue(ItemQuery(scopes: [.plugin]).issues(in: report).allSatisfy(\.itemIDs.isEmpty), "No plugin items, so only issues that name no item")
+        XCTAssertEqual(ItemQuery(scopes: [.plugin]).issues(in: report).count, unnamed.count)
+        XCTAssertFalse(named.isEmpty)
+    }
+
     func testStatusMapping() {
         XCTAssertEqual(ItemQuery.Status(.effective), .applies)
         XCTAssertEqual(ItemQuery.Status(.combined), .applies)
