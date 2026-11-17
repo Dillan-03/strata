@@ -10,6 +10,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 - **Context at launch**: an estimate of how many tokens a repository's instruction files, skill listing and subagent descriptions take before your first message, in the summary bar, with a breakdown, the largest pieces, and each item's share in the inspector. It warns at the thresholds Claude Code documents, a CLAUDE.md over 200 lines and subagent descriptions over 15,000 tokens, and says plainly what it can't count.
 - **Output styles, status line and keybindings** under Settings, and **plugin LSP servers and monitors** under Plugins. Strata shows which output style applies, raising an issue when `outputStyle` doesn't match a style's name exactly, which status line runs, each keybinding, and every command these run, masked and never started.
 - **Export Report…** (⇧⌘E) saves a repository's report as Markdown or JSON, every item or only what the list shows, with secrets masked and home paths shortened to ~, to share in a pull request or issue.
+- **Search all repositories**: the search field's All Repositories scope finds matches in every repository you've added, with personal, managed and plugin items shown once and their status in each. Opening a result switches to that repository.
 
 ## [0.4.0] - 2026-11-17
 
