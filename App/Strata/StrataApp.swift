@@ -38,6 +38,7 @@ struct StrataApp: App {
                 .environment(model)
                 .defaultAppStorage(defaults)
                 .frame(minWidth: 960, minHeight: 600)
+                .task { await model.checkForUpdatesIfDue(defaults: defaults) }
         }
         .defaultSize(width: 1280, height: 800)
         .commands {

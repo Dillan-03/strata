@@ -15,6 +15,9 @@ final class AppModel {
     var isCheckingPluginUpdates = false
     var isExportingReport = false
     var searchScope: SearchScope = .repository
+    /// The last update check, clicked or automatic. Settings shows it, and the sidebar shows a new version.
+    var updateCheckResult: UpdateCheckResult?
+    var isCheckingForUpdates = false
     /// The change Review Changes opens on, when it's opened from one item.
     var reviewSelection: PendingChange.ID?
     /// A fix waiting for approval on the fix review screen.

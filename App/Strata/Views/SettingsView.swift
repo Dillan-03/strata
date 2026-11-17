@@ -6,6 +6,9 @@ enum PreferenceKey {
     static let autoRefresh = "autoRefresh"
     /// Off by default: Strata only reads configuration until this is turned on.
     static let allowsFixes = "allowsFixes"
+    /// Off by default: Strata makes no network request unless this is on or the user clicks Check for Updates.
+    static let checksForUpdatesAutomatically = "checksForUpdatesAutomatically"
+    static let lastAutomaticUpdateCheck = "lastAutomaticUpdateCheck"
 }
 
 struct SettingsView: View {
@@ -91,8 +94,9 @@ struct SettingsView: View {
             Section("Privacy") {
                 Text(
                     "Strata only reads files unless you turn on changes, and then it only changes what you approve. "
-                        + "It never runs MCP servers. Its only network request is Check for Updates, one request to GitHub "
-                        + "made only when you click it. It never contacts plugin marketplaces."
+                        + "It never runs MCP servers. Its only network request is the update check, one request to GitHub "
+                        + "made when you click Check for Updates, or once a day at most if you turn on automatic checks. "
+                        + "It never contacts plugin marketplaces."
                 )
                     .font(.callout)
                     .foregroundStyle(.secondary)
