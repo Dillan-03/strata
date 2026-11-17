@@ -140,6 +140,7 @@ private struct EmptyRepositoriesView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
+        let suggestions = model.suggestedRepositories
         ContentUnavailableView {
             Label("No Repositories", systemImage: "folder.badge.plus")
         } description: {
@@ -148,11 +149,59 @@ private struct EmptyRepositoriesView: View {
                     + "and instructions apply to it, and where each one comes from."
             )
         } actions: {
-            Button("Add Repository…") {
+            if !suggestions.isEmpty {
+                SuggestedRepositories(folders: suggestions)
+            }
+            Button(suggestions.isEmpty ? "Add Repository…" : "Add Another Folder…") {
                 model.presentAddRepositoryPanel()
             }
             .buttonStyle(.borderedProminent)
             .accessibilityIdentifier("addRepositoryButton")
         }
+    }
+}
+
+/// Folders from Claude Code's own project list, one click each to add.
+private struct SuggestedRepositories: View {
+    @Environment(AppModel.self) private var model
+    let folders: [URL]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Claude Code has been used in these folders")
+                    .font(.headline)
+                Spacer()
+                if folders.count > 1 {
+                    Button("Add All") { folders.forEach(model.add) }
+                        .accessibilityIdentifier("addAllSuggestedRepositories")
+                }
+            }
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(folders, id: \.self) { folder in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(folder.lastPathComponent)
+                                Text(model.abbreviatingHome(folder.path))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .truncationMode(.middle)
+                            }
+                            .lineLimit(1)
+                            Spacer()
+                            Button("Add") { model.add(folder) }
+                                .accessibilityLabel("Add \(folder.lastPathComponent)")
+                                .accessibilityIdentifier("suggestedRepository.\(folder.lastPathComponent)")
+                        }
+                        .padding(.vertical, 6)
+                        Divider()
+                    }
+                }
+            }
+            .frame(maxHeight: 240)
+        }
+        .frame(width: 440)
+        .padding(.bottom, 8)
     }
 }
