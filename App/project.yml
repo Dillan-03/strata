@@ -69,6 +69,10 @@ targets:
     platform: macOS
     sources:
       - path: StrataUITests
+        excludes:
+          - "Fixtures/fake-claude.sh"
+      - path: StrataUITests/Fixtures/fake-claude.sh
+        buildPhase: resources
     dependencies:
       - target: Strata
     settings:
