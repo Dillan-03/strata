@@ -54,4 +54,15 @@ final class CrossRepositorySearchTests: XCTestCase {
         // Runs on every keystroke with All Repositories on. The limit leaves room for slow CI runners.
         XCTAssertLessThan(Date().timeIntervalSince(start), 0.25)
     }
+
+    /// A repository path without a trailing slash used to make its own `.claude` and CLAUDE.md look nested on Linux,
+    /// because the walker compared URLs, and URL equality counts the slash.
+    func testARepositoryPathWithoutATrailingSlashHasNoNestedDuplicates() throws {
+        let plain = fixture.home.appendingPathComponent("code/plain")
+        try fixture.write(".claude/skills/build/SKILL.md", in: plain, Fixture.skill(description: "Build"))
+        try fixture.write("CLAUDE.md", in: plain, "# Plain\n")
+        let report = Inspector(environment: fixture.environment).inspect(URL(fileURLWithPath: plain.path))
+        XCTAssertFalse(report.items.contains { $0.scope == .nested }, "\(report.items.filter { $0.scope == .nested }.map(\.name))")
+        XCTAssertEqual(report.items.filter { $0.kind == .skill && $0.name == "build" }.count, 1)
+    }
 }
