@@ -4,6 +4,8 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-17
+
 ### Added
 
 - On first launch, Strata suggests the folders Claude Code has been used in, from its project list in `~/.claude.json`, so you can add them with one click.
@@ -94,6 +96,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
+[0.4.0]: https://github.com/Dillan-03/strata/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Dillan-03/strata/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Dillan-03/strata/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Dillan-03/strata/releases/tag/v0.1.0
