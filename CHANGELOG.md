@@ -4,6 +4,8 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-17
+
 ### Added
 
 - **Uninstall Plugin…** in a plugin's inspector, when changes are on in Settings. It shows the exact `claude plugin uninstall` command, what Claude Code deletes, and the command to reinstall, then runs it in the repository's folder once you confirm. The plugin's data folder is kept unless you untick it. This is the only command Strata runs; the command is still shown to copy if you'd rather run it yourself.
@@ -120,6 +122,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
+[0.7.0]: https://github.com/Dillan-03/strata/releases/tag/v0.7.0
 [0.6.0]: https://github.com/Dillan-03/strata/releases/tag/v0.6.0
 [0.5.0]: https://github.com/Dillan-03/strata/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Dillan-03/strata/releases/tag/v0.4.0
