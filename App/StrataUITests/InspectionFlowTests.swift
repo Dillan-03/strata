@@ -156,4 +156,25 @@ final class InspectionFlowTests: XCTestCase {
                        "The home folder path shouldn't appear")
         app.buttons["Cancel"].click()
     }
+
+    func testSettingsListsPermissionRulesAsTheirOwnItems() throws {
+        let fixture = try makeFixture()
+        let settings = fixture.repository.appendingPathComponent(".claude/settings.json")
+        try FileManager.default.createDirectory(at: settings.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(#"{"permissions": {"deny": ["Read(./.env)"], "ask": ["Bash(git push:*)"]}}"#.utf8).write(to: settings)
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["issuesSummary"].waitForExistence(timeout: 20))
+        app.typeKey("8", modifierFlags: .command)
+        XCTAssertTrue(app.staticTexts["Permission Rules (2)"].waitForExistence(timeout: 10), "Settings doesn't list the permission rules")
+        let deny = app.descendants(matching: .any).matching(identifier: "itemRow.permission.project.Read(./.env)").firstMatch
+        XCTAssertTrue(deny.exists)
+    }
 }

@@ -133,6 +133,23 @@ Not covered:
 - **Hooks passed with `--settings`.**
 - **Whether a hook's matcher fires for a given tool:** that depends on the session.
 
+## Permissions
+
+Strata lists every permission rule as its own item, under Settings, with the list it's in (allow, ask or deny), its tool and specifier, and the file that declares it (`PermissionScanner`). Extra directories and `defaultMode` are items too. Rules are masked like any other value.
+
+- **Every file's rules apply.** Rules from managed, user, project and local settings combine. Claude Code checks them in order, deny, then ask, then allow, and the first match decides. A more specific rule doesn't change that order, so an allow rule can't carve an exception out of a deny rule, and a matching ask rule prompts even when a narrower allow rule matches. A deny in any file beats an allow in any other. ([Manage permissions](https://code.claude.com/docs/en/permissions#manage-permissions), [settings precedence](https://code.claude.com/docs/en/permissions#settings-precedence))
+- **Overridden:** an allow or ask rule is marked overridden only when another rule certainly matches every call it does: a deny (or, for an allow rule, an ask) rule for the same tool with no specifier, or with the same specifier. `Tool(*)` is the same as `Tool`. Strata doesn't work out glob overlaps, and the explanation says so. ([Permission rule syntax](https://code.claude.com/docs/en/permissions#permission-rule-syntax))
+- **Workspace trust:** `allow` rules and `additionalDirectories` in a project's `.claude/settings.json` apply only after you accept the workspace trust dialog, so Strata shows them as **Conditional**. `deny` and `ask` rules aren't affected, since they only restrict. ([Project allow rules and workspace trust](https://code.claude.com/docs/en/permissions#project-allow-rules-and-workspace-trust))
+- **Local settings** are normally your own file, so their allow rules apply without trust. When `.claude` is a symbolic link, Claude Code treats them as the repository's and waits for trust, so Strata does too. Telling whether the file is tracked in git needs git, which Strata never runs, so the item says so instead. ([When your local settings file needs trust](https://code.claude.com/docs/en/permissions#when-your-local-settings-file-needs-trust))
+- **`allowManagedPermissionRulesOnly`** in managed settings makes them the only source of permission rules, so every other file's rules are Inactive. ([Managed settings](https://code.claude.com/docs/en/permissions#managed-settings))
+- **`defaultMode`** follows settings precedence: the highest-precedence file's value wins. A `bypassPermissions` in project or local settings is Inactive, because Claude Code 2.1.257 and later ignore it there.
+- **Running sessions:** Claude Code reloads settings files when they change, including permissions. ([When edits take effect](https://code.claude.com/docs/en/settings#when-edits-take-effect))
+
+Not covered:
+- **Rules passed on the command line:** `--allowedTools`, `--disallowedTools` and `--settings`.
+- **Rules added in a session with `/permissions`** that aren't saved to a file.
+- **Whether a rule matches a particular call.**
+
 ## Instructions (CLAUDE.md, rules, AGENTS.md)
 
 Source: [Memory](https://code.claude.com/docs/en/memory.md).

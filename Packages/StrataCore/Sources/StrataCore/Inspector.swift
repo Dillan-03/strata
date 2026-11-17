@@ -42,6 +42,7 @@ public struct Inspector: Sendable {
         items += AgentScanner(context: context, plugins: plugins).scan()
         items += MCPScanner(context: context, layers: layers, plugins: plugins).scan()
         items += HookScanner(context: context, layers: layers, plugins: plugins).scan()
+        items += PermissionScanner(context: context, layers: layers).scan()
         items += InstructionScanner(context: context, layers: layers).scan()
         var contents = context.contents
         items = items.map { item in

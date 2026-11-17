@@ -255,8 +255,12 @@ final class ChangeReviewTests: XCTestCase {
         let before = fixture.inspect()
         try fixture.json(".claude/settings.json", in: fixture.repository, ["permissions": ["defaultMode": "bypassPermissions"]])
 
-        let notes = SecurityReview.notes(for: try onlyChange(before, fixture.inspect())).map(\.text)
+        let after = fixture.inspect()
+        let setting = try XCTUnwrap(ChangeDetector.changes(from: before, to: after).first { $0.item.kind == .setting })
+        let notes = SecurityReview.notes(for: setting).map(\.text)
         XCTAssertTrue(notes.contains { $0.contains("2.1.257 and later ignore it here") })
+        let mode = try XCTUnwrap(after.items.first { $0.kind == .permission && $0.name == "defaultMode" })
+        XCTAssertEqual(mode.applicability, .inactive, "The mode item agrees: a repository file's bypassPermissions is ignored")
     }
 
     func testSkillAllowedToolsAndAgentToolsAreFlagged() throws {

@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- **Permission rules** as their own items under Settings: every `allow`, `ask` and `deny` rule, extra directory and `defaultMode`, with the file that sets it. Rules a deny or ask rule certainly beats show as Overridden, repository allow rules that wait for workspace trust show as Conditional, and new allow rules get a security note in Review Changes.
+
 ## [0.4.0] - 2026-11-17
 
 ### Added
