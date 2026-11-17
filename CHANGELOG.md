@@ -16,6 +16,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 - The Settings switch for fixes is now **Let Strata change Claude Code configuration when you approve**, since it covers uninstalling, plugins and MCP servers too. Your existing choice carries over.
 
+### Fixed
+
+- In a window narrower than 1,200 points, the category picker is a pop-up instead of a segmented control. The full-width control pushed Filter, Rescan and the inspector button into the toolbar's » overflow menu.
+
 ## [0.2.0] - 2026-11-16
 
 The first signed release, with change tracking: see what changed in your Claude Code configuration since you last looked, and fix overridden copies.

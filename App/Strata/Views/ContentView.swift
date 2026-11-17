@@ -4,6 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AppModel.self) private var model
     @AppStorage(PreferenceKey.autoRefresh) private var autoRefresh = true
+    @State private var windowWidth: CGFloat = 1280
 
     var body: some View {
         @Bindable var model = model
@@ -15,12 +16,13 @@ struct ContentView: View {
                 if model.isMissing(repository.id) {
                     MissingRepositoryView(repository: repository)
                 } else {
-                    RepositoryDetailView(repository: repository)
+                    RepositoryDetailView(repository: repository, compactToolbar: windowWidth < RepositoryDetailView.segmentedPickerWindowWidth)
                 }
             } else {
                 EmptyRepositoriesView()
             }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { windowWidth = $0 }
         .onChange(of: model.selectedRepositoryID) {
             model.selectedItemID = nil
         }

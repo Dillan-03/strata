@@ -11,18 +11,18 @@
 
 ## Measured results
 
-From the CI run on `main` at commit `f33acff` (14 November 2026), which is the v0.1.0 code:
+From the CI run on `main` at commit `bee48c6` (17 November 2026), with everything planned for 0.3.0:
 
 | Suite | Result |
 | --- | --- |
-| StrataCore on Linux (Swift 6) | 145 tests, 0 failures |
-| StrataCore on macOS 15 (Xcode 16) | 145 tests, 0 failures |
-| App and UI tests on macOS 15 | 31 tests: 30 passed, 1 skipped (`ScreenshotTests`, which runs only in the Screenshots workflow and passed there) |
-| StrataCore line coverage (Linux) | 93.5% (3,488 of 3,731 lines) |
+| StrataCore on Linux (Swift 6.4) | 257 tests, 0 failures |
+| StrataCore on macOS 15 (Xcode 16.4) | 257 tests, 0 failures |
+| App and UI tests on macOS 15 | 60 tests: 59 passed, 1 skipped (`ScreenshotTests`, which runs only in the Screenshots workflow and passed there) |
+| StrataCore line coverage (Linux) | 93.7% (5,231 of 5,583 lines) |
 
 Release checks from the v0.1.0 dry run (PR #43) passed on macOS 15.8.2 and macOS 26.7.2: checksum, `codesign --verify --strict`, launch, and the Homebrew round trip. Each CI run posts its own counts and coverage as check annotations, so later numbers are always on the commit's checks.
 
-Coverage is lowest in `ConfigItem`, `InspectionReport` and `Diagnostic` (62–67%). Most of the uncovered lines are display titles and convenience accessors that the app tests exercise but Linux coverage doesn't count. The app target's coverage isn't measured.
+Coverage is lowest in `ConfigItem` and `Diagnostic` (63–67%). Most of the uncovered lines are display titles and convenience accessors that the app tests exercise but Linux coverage doesn't count. The app target's coverage isn't measured.
 
 ## Running locally
 
@@ -34,6 +34,8 @@ xcodebuild test -project Strata.xcodeproj -scheme Strata -destination 'platform=
 
 node --test .github/scripts/issue-title.test.mjs
 ```
+
+App and UI tests need an unlocked Mac. With the screen locked, `xcodebuild test` launches the test host but never starts a test, and waits until it's stopped. The core tests don't need a session.
 
 UI tests launch the app with `-StrataUITesting` and point it at a fixture home folder through `STRATA_UITEST_HOME`. They never read your real configuration or saved repositories.
 
