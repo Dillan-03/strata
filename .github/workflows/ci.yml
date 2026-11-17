@@ -30,6 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The changelog check compares with the base branch, the merge commit's first parent.
+          fetch-depth: 2
           persist-credentials: false
 
       - name: actionlint
@@ -49,14 +51,22 @@ jobs:
       - name: Version script tests
         run: python3 scripts/next-version.test.py
 
+      # A merge can drop a new entry into the release that just shipped without it (#125). New entries go under Unreleased.
+      - name: Changelog check
+        if: github.event_name == 'pull_request'
+        run: |
+          git show HEAD^1:CHANGELOG.md > "$RUNNER_TEMP/base-changelog.md"
+          scripts/next-version.py --against "$RUNNER_TEMP/base-changelog.md"
+
       # Says what merging this does. Only the release PR leaves MARKETING_VERSION unreleased, so only it releases anything.
+      # Compares with the parent rather than asking whether the version is published, so a PR checked while a release is
+      # still building isn't mistaken for the release PR.
       - name: Release check
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           declared=$(grep -E '^\s+MARKETING_VERSION:' App/project.yml | head -1 | awk '{print $2}')
-          if ! gh release view "v$declared" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "::notice title=Release check::Merging this releases $declared."
+          before=$(git show HEAD^1:App/project.yml | grep -E '^\s+MARKETING_VERSION:' | head -1 | awk '{print $2}')
+          if [ "$declared" != "$before" ]; then
+            echo "::notice title=Release check::This change releases $declared (MARKETING_VERSION was $before)."
             scripts/next-version.py --check "$declared"
             exit 0
           fi
