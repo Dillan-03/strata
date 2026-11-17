@@ -62,6 +62,21 @@ public enum ChangeDetector {
     /// Settings Claude Code reads once, at session start.
     static let startupOnlySettings: Set<String> = ["model", "effortLevel", "modelSettings"]
 
+    private static func interfacePickup(_ item: ConfigItem) -> SessionPickup {
+        switch item.kind {
+        case .outputStyle:
+            return SessionPickup(.nextSession, "Claude Code reads output style files when it starts, so a change needs a restart.", source: "https://code.claude.com/docs/en/output-styles")
+        case .statusLine:
+            return SessionPickup(.live, "Claude Code reloads settings and runs the new status line command as soon as you save.", source: "https://code.claude.com/docs/en/statusline")
+        case .keybinding:
+            return SessionPickup(.live, "Claude Code detects changes to keybindings.json and applies them without a restart.", source: "https://code.claude.com/docs/en/keybindings")
+        case .lspServer, .monitor:
+            return SessionPickup(.reloadPlugins, "Plugin LSP servers and monitors change with their plugin. Run /reload-plugins, or start a new session.", source: Docs.plugins)
+        default:
+            return hookOrPermissionPickup(item)
+        }
+    }
+
     private static func hookOrPermissionPickup(_ item: ConfigItem) -> SessionPickup {
         if item.kind == .permission {
             return SessionPickup(.live, "Claude Code reloads settings files when they change, including permissions.", source: Docs.settings)
@@ -121,8 +136,8 @@ public enum ChangeDetector {
         case .plugin:
             return SessionPickup(.reloadPlugins, "Plugin changes apply after /reload-plugins, or in a new session.", source: Docs.plugins)
 
-        case .hook, .permission:
-            return hookOrPermissionPickup(item)
+        case .hook, .permission, .outputStyle, .statusLine, .keybinding, .lspServer, .monitor:
+            return interfacePickup(item)
 
         case .mcpServer:
             if item.scope == .plugin {

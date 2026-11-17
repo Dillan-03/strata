@@ -195,4 +195,25 @@ final class InspectionFlowTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "contextEstimateTotal").firstMatch.waitForExistence(timeout: 10))
         app.buttons["Done"].click()
     }
+
+    func testSettingsListsKeybindingsAndOutputStyles() throws {
+        let fixture = try makeFixture()
+        let claude = fixture.home.appendingPathComponent(".claude")
+        try FileManager.default.createDirectory(at: claude.appendingPathComponent("output-styles"), withIntermediateDirectories: true)
+        try Data(#"{"bindings": [{"context": "Chat", "bindings": {"ctrl+e": "chat:externalEditor"}}]}"#.utf8).write(to: claude.appendingPathComponent("keybindings.json"))
+        try Data("---\nname: Terse\ndescription: Short answers\n---\nBe brief.\n".utf8).write(to: claude.appendingPathComponent("output-styles/terse.md"))
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["issuesSummary"].waitForExistence(timeout: 20))
+        app.typeKey("8", modifierFlags: .command)
+        XCTAssertTrue(app.staticTexts["Keybindings (1)"].waitForExistence(timeout: 10), "Settings doesn't list the keybinding")
+        XCTAssertTrue(app.staticTexts["Output Styles (1)"].exists, "Settings doesn't list the output style")
+    }
 }

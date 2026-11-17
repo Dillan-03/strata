@@ -58,6 +58,8 @@ Uninstalling never touches `~/.claude`, `~/.claude.json`, your repositories, or 
 | Plugins | `enabledPlugins` in every settings file, `~/.claude/plugins/installed_plugins.json` |
 | Hooks | `hooks` in every settings file, and each enabled plugin's `hooks/hooks.json` and manifest |
 | Permissions | `permissions.allow`, `ask` and `deny`, `additionalDirectories` and `defaultMode` in every settings file |
+| Output styles, status line, keybindings | `output-styles/` in `~/.claude`, the repository, managed settings and plugins; `outputStyle` and `statusLine` in every settings file; `~/.claude/keybindings.json` |
+| Plugin LSP servers and monitors | Each enabled plugin's `.lsp.json`, `monitors/monitors.json` and manifest |
 | Instructions | `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules`, `AGENTS.md`, parent folders, `@imports` |
 | Settings | Managed, `~/.claude/settings.json`, `.claude/settings.json`, `.claude/settings.local.json` |
 

@@ -46,6 +46,7 @@ public struct Diagnostic: Identifiable, Hashable, Codable, Sendable {
         case pluginInstallMissing
         case agentsMDIgnored
         case symlinkDuplicate
+        case unknownOutputStyle
     }
 
     public let id: String
