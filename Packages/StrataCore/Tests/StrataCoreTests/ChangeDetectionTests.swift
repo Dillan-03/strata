@@ -145,7 +145,7 @@ final class ChangeDetectionTests: XCTestCase {
 
         let changes = ChangeDetector.changes(from: before, to: fixture.inspect())
         let timings = Dictionary(uniqueKeysWithValues: changes.map { ($0.item.name, $0.pickup.timing) })
-        XCTAssertEqual(timings, ["model": .nextSession, "permissions": .live])
+        XCTAssertEqual(timings, ["model": .nextSession, "permissions": .live, "Bash(npm run lint)": .live], "A new rule is its own change too")
     }
 
     func testInstructionReachAndTiming() throws {
@@ -176,9 +176,9 @@ final class ChangeDetectionTests: XCTestCase {
 
         let changes = ChangeDetector.changes(from: before, to: fixture.inspect())
         XCTAssertEqual(changes.map { "\($0.kind.rawValue) \($0.item.name)" }, [
-            "updated deploy", "updated permissions", "deleted reviewer", "created redis",
+            "updated deploy", "updated permissions", "deleted Bash(npm test)", "deleted reviewer", "created redis",
         ])
-        XCTAssertEqual(changes.map(\.reach), [.global, .global, .repository, .repository])
+        XCTAssertEqual(changes.map(\.reach), [.global, .global, .global, .repository, .repository])
     }
 
     func testCheckingOutAnotherBranchReportsOnlyWhatDiffers() throws {

@@ -10,6 +10,7 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
     case hook
     case instruction
     case setting
+    case permission
 
     public var title: String {
         switch self {
@@ -21,6 +22,7 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .hook: "Hook"
         case .instruction: "Instruction File"
         case .setting: "Setting"
+        case .permission: "Permission Rule"
         }
     }
 
@@ -34,6 +36,7 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .hook: "Hooks"
         case .instruction: "Instructions"
         case .setting: "Settings"
+        case .permission: "Permission Rules"
         }
     }
 }

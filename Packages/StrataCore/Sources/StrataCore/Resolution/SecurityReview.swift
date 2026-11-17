@@ -54,6 +54,14 @@ public enum SecurityReview {
             }
         case .skill, .command, .agent:
             notes += frontmatterNotes(change)
+        case .permission where change.kind != .deleted && ["Allow", "Additional directory"].contains(change.item.metadataValue("List") ?? ""):
+            notes.append(SecurityNote(
+                .caution,
+                change.item.metadataValue("List") == "Allow"
+                    ? "The allow rule \(change.item.name) lets matching calls run without asking. Check it's as narrow as you mean."
+                    : "This gives Claude read and edit access to \(change.item.name).",
+                source: Docs.permissions
+            ))
         case .hook where change.kind != .deleted:
             notes.append(SecurityNote(
                 .caution,

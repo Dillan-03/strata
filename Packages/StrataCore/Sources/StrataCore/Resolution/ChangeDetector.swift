@@ -62,7 +62,10 @@ public enum ChangeDetector {
     /// Settings Claude Code reads once, at session start.
     static let startupOnlySettings: Set<String> = ["model", "effortLevel", "modelSettings"]
 
-    private static func hookPickup(_ item: ConfigItem) -> SessionPickup {
+    private static func hookOrPermissionPickup(_ item: ConfigItem) -> SessionPickup {
+        if item.kind == .permission {
+            return SessionPickup(.live, "Claude Code reloads settings files when they change, including permissions.", source: Docs.settings)
+        }
         if item.scope == .plugin {
             return SessionPickup(.reloadPlugins, "Plugin hooks change with their plugin. Run /reload-plugins, or start a new session.", source: Docs.plugins)
         }
@@ -118,8 +121,8 @@ public enum ChangeDetector {
         case .plugin:
             return SessionPickup(.reloadPlugins, "Plugin changes apply after /reload-plugins, or in a new session.", source: Docs.plugins)
 
-        case .hook:
-            return hookPickup(item)
+        case .hook, .permission:
+            return hookOrPermissionPickup(item)
 
         case .mcpServer:
             if item.scope == .plugin {

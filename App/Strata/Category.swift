@@ -39,7 +39,7 @@ enum Category: String, CaseIterable, Identifiable {
         case .plugins: [.plugin]
         case .hooks: [.hook]
         case .instructions: [.instruction]
-        case .settings: [.setting]
+        case .settings: [.setting, .permission]
         }
     }
 
