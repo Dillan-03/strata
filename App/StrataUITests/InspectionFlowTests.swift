@@ -109,4 +109,26 @@ final class InspectionFlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Skills (2)"].waitForExistence(timeout: 5), "Expected the menu to show Overridden ticked and turn it off")
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "filterChip.clear").firstMatch.exists)
     }
+
+    func testHooksCategoryListsAHookWithItsCommand() throws {
+        let fixture = try makeFixture()
+        let settings = fixture.repository.appendingPathComponent(".claude/settings.json")
+        try FileManager.default.createDirectory(at: settings.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let hooks = #"{"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "./audit.sh"}]}]}}"#
+        try Data(hooks.utf8).write(to: settings)
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["issuesSummary"].waitForExistence(timeout: 20))
+        app.typeKey("6", modifierFlags: .command)
+        XCTAssertTrue(app.staticTexts["Hooks (1)"].waitForExistence(timeout: 10), "The Hooks category doesn't list the hook")
+        let row = app.descendants(matching: .any).matching(identifier: "itemRow.hook.project.PreToolUse: Bash").firstMatch
+        XCTAssertTrue(row.exists)
+    }
 }

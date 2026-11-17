@@ -26,6 +26,7 @@ struct Resolver {
         AgentRules(displayPath: displayPath).resolve(items.filter { $0.kind == .agent }).forEach(update)
         MCPRules(displayPath: displayPath).resolve(items.filter { $0.kind == .mcpServer }).forEach(update)
         PluginRules().resolve(items.filter { $0.kind == .plugin }).forEach(update)
+        HookRules().resolve(items.filter { $0.kind == .hook }).forEach(update)
         InstructionRules().resolve(items.filter { $0.kind == .instruction }).forEach(update)
         SettingRules(displayPath: displayPath).resolve(items.filter { $0.kind == .setting }).forEach(update)
 
@@ -332,6 +333,23 @@ private struct MCPRules {
             return item
         }
         return named + pluginItems
+    }
+}
+
+// MARK: - Hooks
+
+/// Hooks from every settings file and enabled plugin run together, so none overrides another. The scanner has already
+/// marked hooks that are turned off, duplicated, or waiting for workspace trust.
+private struct HookRules {
+    func resolve(_ items: [ConfigItem]) -> [ConfigItem] {
+        items.map { item in
+            var item = item
+            guard Precedence.isCandidate(item) else { return item }
+            item.applicability = item.condition == nil ? .effective : .conditional
+            item.explanation = item.condition.map { [$0] } ?? []
+            item.explanation.append("Hooks from every settings file and enabled plugin all run; a higher-precedence file adds to them rather than replacing them.")
+            return item
+        }
     }
 }
 

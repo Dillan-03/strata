@@ -54,6 +54,13 @@ public enum SecurityReview {
             }
         case .skill, .command, .agent:
             notes += frontmatterNotes(change)
+        case .hook where change.kind != .deleted:
+            notes.append(SecurityNote(
+                .caution,
+                "This hook runs automatically on \(change.item.metadataValue("Event") ?? "an event"), with Claude Code's environment: "
+                    + "\(change.item.summary ?? "check what it runs").",
+                source: Docs.hooks
+            ))
         default:
             break
         }

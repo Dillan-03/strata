@@ -7,6 +7,7 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
     case agent
     case mcpServer
     case plugin
+    case hook
     case instruction
     case setting
 
@@ -17,6 +18,7 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .agent: "Subagent"
         case .mcpServer: "MCP Server"
         case .plugin: "Plugin"
+        case .hook: "Hook"
         case .instruction: "Instruction File"
         case .setting: "Setting"
         }
@@ -29,6 +31,7 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .agent: "Subagents"
         case .mcpServer: "MCP Servers"
         case .plugin: "Plugins"
+        case .hook: "Hooks"
         case .instruction: "Instructions"
         case .setting: "Settings"
         }

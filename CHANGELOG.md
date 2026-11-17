@@ -7,6 +7,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 ### Added
 
 - On first launch, Strata suggests the folders Claude Code has been used in, from its project list in `~/.claude.json`, so you can add them with one click.
+- **Hooks** category: every hook from your settings files and enabled plugins as its own item, with its event, matcher, what it runs (secrets masked) and the file that declares it. Hooks waiting for workspace trust show as Conditional, and ones that `disableAllHooks`, `allowManagedHooksOnly` or a duplicate turn off show as Inactive with the reason. ⌘6 opens it, and Instructions, Settings and Issues move to ⌘7 to ⌘9.
 
 ## [0.3.0] - 2026-11-17
 

@@ -123,6 +123,6 @@ final class InspectionModelTests: XCTestCase {
     }
 
     func testCategoryShortcutsFollowPickerOrder() {
-        XCTAssertEqual(Category.allCases.map(\.shortcut.character), ["1", "2", "3", "4", "5", "6", "7", "8"])
+        XCTAssertEqual(Category.allCases.map(\.shortcut.character), ["1", "2", "3", "4", "5", "6", "7", "8", "9"])
     }
 }
