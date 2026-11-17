@@ -52,17 +52,21 @@ struct ReportWrongResultSheet: View {
 }
 
 extension AppModel {
+    /// "0.5.0 (5)": the version and build, for reports.
+    static var strataVersion: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        return "\(info["CFBundleShortVersionString"] as? String ?? "unknown") (\(info["CFBundleVersion"] as? String ?? "?"))"
+    }
+
     /// Selects the item and shows the GitHub issue text for reporting that Strata got it wrong.
     func reportWrongResult(_ item: ConfigItem) {
         guard let report = selectedReport else { return }
         reveal(item.id)
-        let info = Bundle.main.infoDictionary ?? [:]
-        let version = "\(info["CFBundleShortVersionString"] as? String ?? "unknown") (\(info["CFBundleVersion"] as? String ?? "?"))"
         let os = ProcessInfo.processInfo.operatingSystemVersion
         wrongResultReport = WrongResultReport(
             item: item,
             in: report,
-            strataVersion: version,
+            strataVersion: Self.strataVersion,
             macOSVersion: "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
             homeDirectory: environment.homeDirectory
         )

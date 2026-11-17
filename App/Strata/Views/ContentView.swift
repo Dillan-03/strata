@@ -46,6 +46,10 @@ struct ContentView: View {
         .sheet(item: $model.wrongResultReport) { report in
             ReportWrongResultSheet(report: report)
         }
+        .sheet(isPresented: $model.isExportingReport) {
+            ExportReportSheet()
+                .environment(model)
+        }
         .sheet(isPresented: $model.isCheckingPluginUpdates) {
             PluginUpdatesSheet()
                 .environment(model)

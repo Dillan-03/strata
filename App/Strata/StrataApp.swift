@@ -66,6 +66,12 @@ struct StrataApp: App {
                 }
                 .disabled(model.selectedReport == nil)
 
+                Button("Export Report…") {
+                    model.isExportingReport = true
+                }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+                .disabled(model.selectedReport == nil)
+
                 Divider()
 
                 ForEach(Category.allCases) { category in
