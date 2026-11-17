@@ -115,7 +115,7 @@ private struct ItemDetail: View {
                         }
                     }
                 } else {
-                    Text("Strata can remove this copy, or replace it with the one that runs. Turn on fixes and uninstalling in Settings to use them.")
+                    Text("Strata can remove this copy, or replace it with the one that runs. Turn on changes in Settings to use them.")
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     SettingsLink { Text("Open Settings…") }
@@ -124,44 +124,61 @@ private struct ItemDetail: View {
         }
     }
 
-    /// Overridden copies are uninstalled with Remove, in the Fix section, so this covers every other copy.
+    /// Uninstalling, turning a plugin off or on, or removing an MCP server. Overridden skills, commands and subagents
+    /// are uninstalled with Remove, in the Fix section, so they're left out here.
     @ViewBuilder private var uninstallSection: some View {
-        if case .shadowed = item.applicability {
+        if case .shadowed = item.applicability, FixPlanner.fixableKinds.contains(item.kind) {
             EmptyView()
         } else {
-            switch model.uninstallOffer(for: item) {
-            case .none:
-                EmptyView()
-            case .unavailable(let reason):
-                Section("Uninstall") {
-                    Text(reason)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            case .available(let fixes):
-                Section("Uninstall") {
-                    if let failure = model.failedFixes[item.id] {
-                        Label("The last uninstall failed: \(failure)", systemImage: "xmark.octagon")
-                            .foregroundStyle(.red)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    if allowsFixes {
-                        Text("Moves this \(item.kind.title.lowercased()) into Strata's backups. You'll see exactly what changes first.")
+            let offer = model.changeOffer(for: item)
+            let command = FixPlanner.uninstallCommand(for: item)
+            if offer != .none || command != nil {
+                Section(changeSectionTitle) {
+                    switch offer {
+                    case .none:
+                        EmptyView()
+                    case .unavailable(let reason):
+                        Text(reason)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        ForEach(fixes) { fix in
-                            Button(fix.action.buttonTitle) { model.proposedFix = fix }
-                                .help(fix.title)
-                                .accessibilityIdentifier("fix.\(fix.action.rawValue)")
+                    case .available(let fixes):
+                        if let failure = model.failedFixes[item.id] {
+                            Label("The last change failed: \(failure)", systemImage: "xmark.octagon")
+                                .foregroundStyle(.red)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                    } else {
-                        Text("Strata can uninstall this \(item.kind.title.lowercased()). Turn on fixes and uninstalling in Settings to use it.")
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        SettingsLink { Text("Open Settings…") }
+                        if allowsFixes {
+                            ForEach(fixes) { fix in
+                                Text(fix.action.inspectorNote(kind: item.kind))
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Button(fix.action.buttonTitle) { model.proposedFix = fix }
+                                    .help(fix.title)
+                                    .accessibilityIdentifier("fix.\(fix.action.rawValue)")
+                            }
+                        } else {
+                            Text("Strata can make this change. Turn on changes in Settings to use it.")
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            SettingsLink { Text("Open Settings…") }
+                        }
+                    }
+                    if let command {
+                        CommandRow(
+                            note: "To uninstall the plugin, run this in Terminal. Strata doesn't run commands.",
+                            command: command
+                        )
                     }
                 }
             }
+        }
+    }
+
+    private var changeSectionTitle: String {
+        switch item.kind {
+        case .plugin: "Plugin"
+        case .mcpServer: "Remove"
+        default: "Uninstall"
         }
     }
 

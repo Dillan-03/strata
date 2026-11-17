@@ -40,8 +40,8 @@ struct ItemListView: View {
                             )
                             .tag(item.id)
                             .contextMenu {
-                                if allowsFixes, FixPlanner.fixableKinds.contains(item.kind), FixPlanner.writableScopes.contains(item.scope) {
-                                    Button("Uninstall…") { model.proposeUninstall(item) }
+                                if allowsFixes, let title = Self.changeTitle(for: item) {
+                                    Button(title) { model.proposeChange(item) }
                                 }
                             }
                         }
@@ -60,6 +60,20 @@ struct ItemListView: View {
         let kind: ItemKind
         let items: [ConfigItem]
         var id: ItemKind { kind }
+    }
+
+    /// The context menu's change for an item, when Strata might make one. Choosing it reviews the change, or shows why not.
+    static func changeTitle(for item: ConfigItem) -> String? {
+        switch item.kind {
+        case .skill, .command, .agent:
+            FixPlanner.writableScopes.contains(item.scope) ? "Uninstall…" : nil
+        case .plugin:
+            [.user, .project, .local].contains(item.scope) && item.stage != .declared ? (item.stage == .enabled ? "Disable…" : "Enable…") : nil
+        case .mcpServer:
+            [.user, .project, .local].contains(item.scope) ? "Remove…" : nil
+        default:
+            nil
+        }
     }
 
     static func groups(_ items: [ConfigItem]) -> [Group] {

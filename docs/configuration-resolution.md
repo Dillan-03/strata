@@ -244,6 +244,38 @@ A replacement is copied in beside the target and swapped in by renaming, so a fa
 
 A running Claude Code session may keep using the old copy until it reloads, as with any other change.
 
+### Uninstalling, plugins and MCP servers
+
+These sit behind the same Settings switch, review screen, backup and undo as fixes (`FixPlanner.change`).
+
+**Uninstall** moves a skill, command or subagent that nothing overrides into the backups, under the same folder and symbolic-link rules as fixes. An overridden copy uses **Remove**, which does the same thing. The review screen says which copy runs once it's gone, if any. It also says when a running session stops seeing it, using the removal rules in [When a running session sees a change](#when-a-running-session-sees-a-change).
+
+**Disable / Enable a plugin** flips its entry in `enabledPlugins`, `"<name>@<marketplace>": true` or `false`, in the settings file that decides it. That's the highest-precedence file that mentions the plugin. Claude Code's own `claude plugin disable` and `enable` change the same setting, and a disabled plugin stays installed. Managed settings are never edited. A plugin with no `enabledPlugins` entry gets the `claude plugin disable` command to copy instead. ([Manage installed plugins](https://code.claude.com/docs/en/plugins/install#manage-installed-plugins), [plugin disable](https://code.claude.com/docs/en/plugins/cli-reference#plugin-disable), [where a plugin is enabled](https://code.claude.com/docs/en/plugins/loading#find-where-a-plugin-is-enabled))
+
+**Uninstall a plugin** is shown as a command to copy, never run: `claude plugin uninstall <id> --scope <scope>`, with the plugin's install scope. Uninstalling also deletes the plugin's stored options, secrets and data directory when it's the last scope it's installed at. Only Claude Code can do that safely. The ID is shell-quoted, because it comes from files a repository controls. ([plugin uninstall](https://code.claude.com/docs/en/plugins/cli-reference#plugin-uninstall))
+
+**Remove an MCP server** deletes its entry from the file that defines it:
+
+| Scope | File | Entry |
+| --- | --- | --- |
+| Project | `.mcp.json` at the repository root | `mcpServers.<name>` |
+| User | `~/.claude.json` | `mcpServers.<name>` |
+| Local | `~/.claude.json` | `projects.<repository path>.mcpServers.<name>` |
+
+Plugin servers are refused, because Claude Code adds and removes them with their plugin. Managed servers are refused too. Strata never starts or contacts a server. ([MCP installation scopes](https://code.claude.com/docs/en/mcp#mcp-installation-scopes), [plugin-provided MCP servers](https://code.claude.com/docs/en/mcp#plugin-provided-mcp-servers))
+
+Plugin settings and MCP servers live in JSON files that Claude Code also writes, `~/.claude.json` most of all. So `ConfigWriter`:
+
+- edits the entry's text in place (`JSONTextEdit`) and leaves every other byte of the file as it was
+- may edit `~/.claude.json` and the repository's `.mcp.json`, as single files outside the two folders, but not if either is a symbolic link
+- refuses if the file changed since the review
+- backs up the whole file
+- writes the new text with one rename, keeping the file's permissions, because `~/.claude.json` is private to its owner
+
+**Undo** reverses only Strata's edit. It puts the removed entry back, or the old value, unless the entry has changed since. Anything Claude Code wrote elsewhere in the file in the meantime is kept.
+
+A plugin change applies after `/reload-plugins` or in a new session. The docs don't say whether a running session picks up an edit to MCP configuration, so Strata says so. ([check which stage a plugin reached](https://code.claude.com/docs/en/plugins/loading#check-which-stage-a-plugin-reached))
+
 ### Status since the last review
 
 Every item gets a status from its pending change and the problems Strata reports for it now (`SyncStatus`):

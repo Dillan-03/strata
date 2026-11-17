@@ -9,10 +9,11 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 - **Filter chips** above the item list for status, scope and Has Issues. Each shows how many items it would show, chips that match nothing are hidden, and they share their state with the Filter menu.
 - **About** in Settings, with Strata's version and build, and a **Check for Updates** button. It makes one request to GitHub for the latest release, only when you click. If there's a newer version, it shows a link to the release notes and the `brew upgrade` command to copy. Strata still never downloads or installs anything.
 - **Uninstall…** for skills, commands and subagents in `~/.claude` or the repository's `.claude` folder, in the inspector and the list's context menu. The review says which copy runs instead, if any, and when a running Claude Code session stops seeing it. Like fixes, it keeps a backup and can be undone. Plugin, managed and claude.ai items aren't offered, with the reason why.
+- **Disable / Enable** a plugin, by flipping its `enabledPlugins` entry in the settings file that decides it, and **Remove** an MCP server from `.mcp.json` or `~/.claude.json`. Only that entry changes; the rest of the file, including what Claude Code writes to `~/.claude.json`, is left as it was, and undo reverses just that entry. To uninstall a plugin, Strata shows the `claude plugin uninstall` command to copy.
 
 ### Changed
 
-- The Settings switch for fixes is now **Let Strata fix and uninstall skills, commands and subagents**, since it covers both. Your existing choice carries over.
+- The Settings switch for fixes is now **Let Strata change Claude Code configuration when you approve**, since it covers uninstalling, plugins and MCP servers too. Your existing choice carries over.
 
 ## [0.2.0] - 2026-11-16
 

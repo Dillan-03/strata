@@ -9,6 +9,15 @@ public struct ConfigFix: Hashable, Sendable, Identifiable {
         case replaceWithWinner
         /// Moves a copy nothing overrides into Strata's backups. Overridden copies get `removeCopy` instead.
         case uninstall
+        /// Sets a plugin's `enabledPlugins` entry to `false` in the settings file that decides it.
+        case disablePlugin
+        /// Sets that entry back to `true`.
+        case enablePlugin
+        /// Removes an MCP server's entry from `.mcp.json` or `~/.claude.json`, leaving the rest of the file as it was.
+        case removeServer
+
+        /// Edits one entry inside a JSON file, rather than moving files.
+        public var editsJSON: Bool { [.disablePlugin, .enablePlugin, .removeServer].contains(self) }
     }
 
     public let action: Action
@@ -27,6 +36,10 @@ public struct ConfigFix: Hashable, Sendable, Identifiable {
     /// Taken when the fix was offered. Applying refuses if either side has changed since.
     let targetFingerprint: String
     let sourceFingerprint: String?
+    /// For an edit inside a JSON file: the keys from the root to the entry.
+    public internal(set) var jsonPath: [String]?
+    /// For a plugin toggle: the JSON value written.
+    public internal(set) var newValue: String?
 
     public var id: String { "\(action.rawValue):\(target.id)" }
 }
@@ -189,11 +202,25 @@ public struct FixPreview: Hashable, Sendable {
     public let diff: ConfigDiff
 
     public init(_ fix: ConfigFix, fileManager: FileManager = .default) {
+        if fix.action.editsJSON, let path = fix.jsonPath, let key = path.last {
+            // Only the entry, masked: the file may be ~/.claude.json, which holds far more than this change.
+            targetFiles = [fix.targetURL.lastPathComponent]
+            sourceFiles = []
+            let text = (try? String(contentsOf: fix.targetURL, encoding: .utf8)) ?? ""
+            let before = JSONTextEdit.valueText(at: path, in: text).flatMap(Self.jsonValue)
+            let after = fix.action == .removeServer ? nil : fix.newValue.flatMap(Self.jsonValue)
+            diff = ConfigDiff(before: before.map { ItemContent.keyed($0, root: key) }, after: after.map { ItemContent.keyed($0, root: key) })
+            return
+        }
         targetFiles = Self.files(in: fix.targetURL, fileManager: fileManager)
         sourceFiles = fix.sourceURL.map { Self.files(in: $0, fileManager: fileManager) } ?? []
         let before = Self.mainText(fix.targetURL, kind: fix.target.kind).map(ItemContent.document)
         let after = fix.sourceURL.flatMap { Self.mainText($0, kind: fix.winner?.kind ?? fix.target.kind) }.map(ItemContent.document)
         diff = ConfigDiff(before: before, after: fix.action == .replaceWithWinner ? after : nil)
+    }
+
+    private static func jsonValue(_ text: String) -> Any? {
+        try? JSONSerialization.jsonObject(with: Data(text.utf8), options: .fragmentsAllowed)
     }
 
     private static func files(in url: URL, fileManager: FileManager) -> [String] {

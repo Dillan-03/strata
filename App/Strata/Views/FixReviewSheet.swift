@@ -41,16 +41,16 @@ struct FixReviewSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            section(fix.action == .replaceWithWinner ? "Replaced" : "Moved to Backups") {
+            section(fix.action == .replaceWithWinner ? "Replaced" : fix.action.editsJSON ? "Edited" : "Moved to Backups") {
                 fileList(preview.targetFiles)
             }
             if fix.action == .replaceWithWinner {
                 section("Copied In") { fileList(preview.sourceFiles) }
             }
-            if fix.action == .uninstall {
+            if fix.action == .uninstall || fix.action.editsJSON {
                 section("In a Running Claude Code Session") { pickup }
             }
-            section(fix.action == .replaceWithWinner ? "How the Main File Changes" : "What Goes") {
+            section(fix.action == .replaceWithWinner || fix.action.editsJSON ? "What Changes" : "What Goes") {
                 DiffView(diff: preview.diff)
             }
         }
@@ -87,11 +87,42 @@ struct FixReviewSheet: View {
             default:
                 steps.append("This is the copy that runs. Once it's gone, one of the \(fix.overridden.count) copies it overrides runs instead. Strata rescans and shows which.")
             }
+        case .disablePlugin, .enablePlugin:
+            let value = fix.action == .disablePlugin ? "false" : "true"
+            steps = [
+                "Strata sets \"\(fix.target.name)\": \(value) under enabledPlugins in \(target), and changes nothing else in the file.",
+                "A copy of the whole file goes into Strata's backups first.",
+                Self.reach(of: fix.target.scope, file: fix.targetURL.lastPathComponent),
+            ]
+        case .removeServer:
+            steps = [
+                "Strata removes the \(fix.target.name) entry from \(target), and changes nothing else in the file.",
+                "A copy of the whole file goes into Strata's backups first. Strata never starts or contacts the server.",
+            ]
+            if fix.targetURL.lastPathComponent == ".mcp.json" {
+                steps.append("This file is usually committed, so the server goes for everyone who uses the repository once you commit the change.")
+            } else {
+                steps.append("Claude Code writes this file too. Undo puts back only this entry, so anything Claude Code wrote since is kept.")
+            }
         }
-        steps.append(fix.action == .replaceWithWinner
-            ? "If either copy changes before you confirm, Strata stops and changes nothing. You can undo the fix afterwards."
-            : "If this copy changes before you confirm, Strata stops and changes nothing. You can undo this afterwards.")
+        switch fix.action {
+        case .replaceWithWinner:
+            steps.append("If either copy changes before you confirm, Strata stops and changes nothing. You can undo the fix afterwards.")
+        case .disablePlugin, .enablePlugin, .removeServer:
+            steps.append("If the file changes before you confirm, Strata stops and changes nothing. You can undo this afterwards.")
+        case .removeCopy, .uninstall:
+            steps.append("If this copy changes before you confirm, Strata stops and changes nothing. You can undo this afterwards.")
+        }
         return steps
+    }
+
+    private static func reach(of scope: Scope, file: String) -> String {
+        switch scope {
+        case .user: "This is your personal settings file, so it applies in every repository."
+        case .project: "\(file) is the repository's shared settings, usually committed, so it applies to everyone who uses the repository."
+        case .local: "\(file) is your personal settings for this repository only."
+        default: "It applies wherever \(file) applies."
+        }
     }
 
     private var pickup: some View {
@@ -114,7 +145,7 @@ struct FixReviewSheet: View {
             Text(outcome.message)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("fixResultMessage")
-            if fix.action == .uninstall, case .applied = outcome {
+            if fix.action == .uninstall || fix.action.editsJSON, case .applied = outcome {
                 pickup
             }
         }
@@ -190,6 +221,9 @@ extension ConfigFix {
         case .removeCopy: return "Remove the \(scope) copy of \(name)?"
         case .replaceWithWinner: return "Replace the \(scope) copy of \(name) with the \(winner?.scope.title.lowercased() ?? "running") one?"
         case .uninstall: return "Uninstall the \(scope) \(target.kind.title.lowercased()) \(name)?"
+        case .disablePlugin: return "Disable the plugin \(target.name)?"
+        case .enablePlugin: return "Enable the plugin \(target.name)?"
+        case .removeServer: return "Remove the \(scope) MCP server \(target.name)?"
         }
     }
 }
@@ -201,6 +235,9 @@ extension ConfigFix.Action {
         case .removeCopy: "Remove…"
         case .replaceWithWinner: "Replace…"
         case .uninstall: "Uninstall…"
+        case .disablePlugin: "Disable…"
+        case .enablePlugin: "Enable…"
+        case .removeServer: "Remove…"
         }
     }
 
@@ -209,6 +246,23 @@ extension ConfigFix.Action {
         case .removeCopy: "Remove Copy"
         case .replaceWithWinner: "Replace Copy"
         case .uninstall: "Uninstall"
+        case .disablePlugin: "Disable Plugin"
+        case .enablePlugin: "Enable Plugin"
+        case .removeServer: "Remove Server"
+        }
+    }
+
+    /// The line above the button in the inspector.
+    func inspectorNote(kind: ItemKind) -> String {
+        switch self {
+        case .removeCopy, .replaceWithWinner, .uninstall:
+            "Moves this \(kind.title.lowercased()) into Strata's backups. You'll see exactly what changes first."
+        case .disablePlugin:
+            "Turns it off in the settings file that turns it on. It stays installed."
+        case .enablePlugin:
+            "Turns it back on in the settings file that turned it off."
+        case .removeServer:
+            "Removes its entry and leaves the rest of the file as it is. You'll see exactly what changes first."
         }
     }
 
@@ -217,6 +271,9 @@ extension ConfigFix.Action {
         case .removeCopy: "Removed"
         case .replaceWithWinner: "Replaced"
         case .uninstall: "Uninstalled"
+        case .disablePlugin: "Disabled"
+        case .enablePlugin: "Enabled"
+        case .removeServer: "Removed"
         }
     }
 }

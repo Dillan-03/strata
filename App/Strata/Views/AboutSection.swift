@@ -1,4 +1,3 @@
-import AppKit
 import StrataCore
 import SwiftUI
 
@@ -42,17 +41,7 @@ struct AboutSection: View {
             VStack(alignment: .leading, spacing: 6) {
                 Label("Strata \(latest) is available.", systemImage: "arrow.down.circle")
                 Link("Release Notes", destination: releaseNotes)
-                LabeledContent {
-                    Button("Copy") {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(Self.upgradeCommand, forType: .string)
-                    }
-                    .accessibilityLabel("Copy upgrade command")
-                } label: {
-                    Text(Self.upgradeCommand)
-                        .font(.body.monospaced())
-                        .textSelection(.enabled)
-                }
+                CommandRow(command: Self.upgradeCommand)
             }
         case .failed(let failure):
             Label(failure.message, systemImage: "exclamationmark.triangle")

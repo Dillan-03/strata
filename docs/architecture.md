@@ -21,7 +21,7 @@ Claude Code keeps its user-level configuration in `~/.claude/` and `~/.claude.js
 What Strata does instead:
 
 - **Hardened runtime** is on for release builds (required for notarisation).
-- **Read-only by default.** The only code that writes Claude Code configuration is `ConfigWriter`, in StrataCore. It runs only when fixes are on and the user approves a fix. It refuses:
+- **Read-only by default.** The only code that writes Claude Code configuration is `ConfigWriter`, in StrataCore. It runs only when changes are on in Settings and the user approves one. JSON files (`~/.claude.json`, `.mcp.json`, settings) are edited one entry at a time by `JSONTextEdit`, keeping every other byte and the file's permissions. It refuses:
     - anything outside `~/.claude` and the inspected repository's `.claude` folder
     - anything reached through a symbolic link
     - anything that changed since the fix was reviewed

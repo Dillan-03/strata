@@ -14,6 +14,11 @@ public struct FixRecord: Codable, Hashable, Sendable, Identifiable {
     /// What a replacement left behind, so undo can tell whether it has been edited since.
     let resultFingerprint: String?
     public internal(set) var undoneAt: Date?
+    /// For an edit inside a JSON file: where the entry is, and what undo puts back.
+    var jsonPath: [String]?
+    var removedMember: String?
+    var oldValue: String?
+    var newValue: String?
 }
 
 public enum FixError: Error, Equatable, LocalizedError {
@@ -38,11 +43,14 @@ public struct ConfigWriter {
     public let backupDirectory: URL
     /// Folders the writer may change. Anything else is refused, whatever the fix says.
     public let allowedRoots: [URL]
+    /// Single files outside those folders the writer may edit: `~/.claude.json` and the repository's `.mcp.json`.
+    public let allowedFiles: [URL]
     let fileManager: FileManager
 
-    public init(backupDirectory: URL, allowedRoots: [URL], fileManager: FileManager = .default) {
+    public init(backupDirectory: URL, allowedRoots: [URL], allowedFiles: [URL] = [], fileManager: FileManager = .default) {
         self.backupDirectory = backupDirectory.standardizedFileURL
         self.allowedRoots = allowedRoots.map(\.standardizedFileURL)
+        self.allowedFiles = allowedFiles.map(\.standardizedFileURL)
         self.fileManager = fileManager
     }
 
@@ -66,6 +74,8 @@ public struct ConfigWriter {
         let folder = try makeBackupFolder(at: date)
         let backup = folder.appendingPathComponent(target.lastPathComponent)
         var resultFingerprint: String?
+        var removedMember: String?
+        var oldValue: String?
         do {
             switch fix.action {
             case .removeCopy, .uninstall:
@@ -75,6 +85,18 @@ public struct ConfigWriter {
                 try fileManager.copyItem(at: target, to: backup)
                 try swap(target, withCopyOf: source)
                 resultFingerprint = try Fingerprint.ofTree(target, fileManager: fileManager)
+            case .disablePlugin, .enablePlugin, .removeServer:
+                guard let path = fix.jsonPath else { throw FixError.failed("Strata doesn't know which entry to change.") }
+                try fileManager.copyItem(at: target, to: backup)
+                let text = try String(contentsOf: target, encoding: .utf8)
+                let edited: String
+                if fix.action == .removeServer {
+                    (edited, removedMember) = try JSONTextEdit.removeMember(at: path, in: text)
+                } else {
+                    guard let value = fix.newValue else { throw FixError.failed("Strata doesn't know what to set.") }
+                    (edited, oldValue) = try JSONTextEdit.replaceValue(at: path, with: value, in: text)
+                }
+                try write(edited, over: target)
             }
         } catch {
             try? fileManager.removeItem(at: folder)
@@ -83,7 +105,8 @@ public struct ConfigWriter {
 
         let record = FixRecord(
             id: UUID(), date: date, action: fix.action, itemKind: fix.target.kind, itemName: fix.target.name,
-            targetPath: target.path, backupPath: backup.path, resultFingerprint: resultFingerprint, undoneAt: nil
+            targetPath: target.path, backupPath: backup.path, resultFingerprint: resultFingerprint, undoneAt: nil,
+            jsonPath: fix.jsonPath, removedMember: removedMember, oldValue: oldValue, newValue: fix.newValue
         )
         try save(record, in: folder)
         return record
@@ -113,6 +136,25 @@ public struct ConfigWriter {
                 throw FixError.undoBlocked("\(target.lastPathComponent) changed after Strata replaced it. Undo would lose that edit, so Strata left it.")
             }
             try swap(target, withCopyOf: backup)
+        case .disablePlugin, .enablePlugin, .removeServer:
+            // Reverses only Strata's edit, so anything Claude Code wrote to the file since is kept.
+            guard let path = record.jsonPath, let text = try? String(contentsOf: target, encoding: .utf8) else {
+                throw FixError.undoBlocked("\(target.lastPathComponent) is gone or unreadable, so there's nothing to undo in.")
+            }
+            let current = JSONTextEdit.valueText(at: path, in: text)
+            let restored: String
+            if record.action == .removeServer {
+                guard let member = record.removedMember, current == nil else {
+                    throw FixError.undoBlocked("\(target.lastPathComponent) has a \(path.last ?? "") entry again, so Strata left it.")
+                }
+                restored = try JSONTextEdit.insertMember(member, intoObjectAt: Array(path.dropLast()), in: text)
+            } else {
+                guard let old = record.oldValue, current == record.newValue else {
+                    throw FixError.undoBlocked("The \(path.last ?? "") entry changed after Strata set it, so Strata left it.")
+                }
+                restored = try JSONTextEdit.replaceValue(at: path, with: old, in: text).text
+            }
+            try write(restored, over: target)
         }
 
         var undone = record
@@ -134,9 +176,16 @@ public struct ConfigWriter {
 
     // MARK: - Pieces
 
-    /// Inside an allowed folder, and not reached through a symbolic link below it.
+    /// Inside an allowed folder, and not reached through a symbolic link below it. Or one of the allowed files, itself
+    /// not a symbolic link.
     private func checkAllowed(_ url: URL) throws {
         let url = url.standardizedFileURL
+        if allowedFiles.contains(url) {
+            if (try? fileManager.destinationOfSymbolicLink(atPath: url.path)) != nil {
+                throw FixError.notAllowed("\(url.lastPathComponent) is a symbolic link, so Strata won't change it.")
+            }
+            return
+        }
         guard let root = allowedRoots.first(where: { FixPlanner.contains($0, url) }) else {
             throw FixError.notAllowed("Strata only changes files in ~/.claude and the repository's .claude folder, not \(url.path).")
         }
@@ -166,6 +215,20 @@ public struct ConfigWriter {
             throw error
         }
         try? fileManager.removeItem(at: outgoing)
+    }
+
+    /// Replaces a file's contents in one rename, keeping its permissions: `~/.claude.json` is private to its owner.
+    private func write(_ text: String, over target: URL) throws {
+        let permissions = try fileManager.attributesOfItem(atPath: target.path)[.posixPermissions]
+        let incoming = target.deletingLastPathComponent().appendingPathComponent(".strata-incoming-\(UUID().uuidString)")
+        try Data(text.utf8).write(to: incoming)
+        do {
+            if let permissions { try fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: incoming.path) }
+            _ = try fileManager.replaceItemAt(target, withItemAt: incoming)
+        } catch {
+            try? fileManager.removeItem(at: incoming)
+            throw error
+        }
     }
 
     private func makeBackupFolder(at date: Date) throws -> URL {

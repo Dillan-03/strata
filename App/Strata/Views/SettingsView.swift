@@ -59,13 +59,14 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Section("Fixes and Uninstalling") {
-                Toggle("Let Strata fix and uninstall skills, commands and subagents", isOn: $allowsFixes)
+            Section("Changes") {
+                Toggle("Let Strata change Claude Code configuration when you approve", isOn: $allowsFixes)
                     .accessibilityIdentifier("allowsFixesToggle")
                 Text(
-                    "Off by default. When it's on, Strata can uninstall a skill, command or subagent in ~/.claude or a repository's "
-                        + ".claude folder, and remove an overridden copy or replace it with the copy that runs. Every change shows you "
-                        + "what it will do first, keeps a backup, and can be undone here."
+                    "Off by default. When it's on, Strata can uninstall a skill, command or subagent, remove an overridden copy or "
+                        + "replace it with the copy that runs, disable or enable a plugin, and remove an MCP server. It only edits "
+                        + "~/.claude, ~/.claude.json, and a repository's .claude folder and .mcp.json. Every change shows you what it "
+                        + "will do first, keeps a backup, and can be undone here."
                 )
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -89,7 +90,7 @@ struct SettingsView: View {
             AboutSection()
             Section("Privacy") {
                 Text(
-                    "Strata only reads files unless you turn on fixes, and then it only changes what you approve. "
+                    "Strata only reads files unless you turn on changes, and then it only changes what you approve. "
                         + "It never runs MCP servers. Its only network request is Check for Updates, one request to GitHub "
                         + "made only when you click it."
                 )
