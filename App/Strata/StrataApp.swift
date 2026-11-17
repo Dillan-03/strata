@@ -19,9 +19,8 @@ struct StrataApp: App {
         }
         defaults = launch.defaults
         let model = AppModel(store: RepositoryStore(defaults: launch.defaults), environment: environment)
-        if let repository = launch.initialRepository {
-            model.add(repository)
-        }
+        launch.initialRepositories.forEach(model.add)
+        model.selectedRepositoryID = model.repositories.first?.id
         if launch.isUITesting || launch.isHostingUnitTests {
             notifications = nil
         } else {

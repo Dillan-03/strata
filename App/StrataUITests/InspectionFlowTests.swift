@@ -232,4 +232,37 @@ final class InspectionFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["saveReportButton"].waitForExistence(timeout: 10), "Export Report didn't open")
         app.buttons["Cancel"].click()
     }
+
+    func testSearchingAllRepositoriesFindsAnItemInAnother() throws {
+        let fixture = try makeFixture()
+        let other = fixture.home.appendingPathComponent("code/other-repo")
+        let skill = other.appendingPathComponent(".claude/skills/lint/SKILL.md")
+        try FileManager.default.createDirectory(at: skill.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("---\ndescription: Lint the other repo\n---\n".utf8).write(to: skill)
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": "\(fixture.repository.path):\(other.path)",
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["issuesSummary"].waitForExistence(timeout: 20))
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.click()
+        search.typeText("lint")
+        let scope = app.descendants(matching: .any).matching(identifier: "searchScopePicker").firstMatch
+        XCTAssertTrue(scope.waitForExistence(timeout: 5), "No search scope picker appears while searching")
+        let allScope = scope.descendants(matching: .any).matching(NSPredicate(format: "label == %@ OR title == %@", "All Repositories", "All Repositories")).firstMatch
+        XCTAssertTrue(allScope.exists, "The scope picker doesn't offer All Repositories:\n\(scope.debugDescription)")
+        allScope.click()
+
+        let result = app.descendants(matching: .any).matching(identifier: "searchResult.skill.project.lint").firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 20), "The other repository's skill isn't found")
+        result.click()
+        let row = app.descendants(matching: .any).matching(identifier: "itemRow.skill.project.lint").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Opening the result doesn't show it in its repository")
+    }
 }

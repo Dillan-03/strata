@@ -40,7 +40,8 @@ struct DirectoryWalker {
         walk(root, depth: 0, maxDepth: maxDepth, visited: &visited) { url, isDirectory in
             guard isDirectory else { return false }
             if url.lastPathComponent == name {
-                if url.deletingLastPathComponent().standardizedFileURL != root.standardizedFileURL {
+                // Paths, not URLs: URL equality counts a trailing slash, so on Linux the root's own folder looked nested.
+                if url.deletingLastPathComponent().standardizedFileURL.path != root.standardizedFileURL.path {
                     results.append(url)
                 }
                 return false
@@ -58,8 +59,8 @@ struct DirectoryWalker {
             if isDirectory {
                 return !Self.skippedDirectoryNames.contains(url.lastPathComponent) && url.lastPathComponent != ".claude"
             }
-            let parent = url.deletingLastPathComponent().standardizedFileURL
-            if names.contains(url.lastPathComponent), parent != root.standardizedFileURL {
+            let parent = url.deletingLastPathComponent().standardizedFileURL.path
+            if names.contains(url.lastPathComponent), parent != root.standardizedFileURL.path {
                 results.append(url)
             }
             return false

@@ -24,7 +24,10 @@ struct ContentView: View {
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { windowWidth = $0 }
         .onChange(of: model.selectedRepositoryID) {
-            model.selectedItemID = nil
+            // Keep the selection when the new repository has the same item, as a search result opened there does.
+            if let id = model.selectedItemID, model.selectedReport?.item(withID: id) == nil {
+                model.selectedItemID = nil
+            }
         }
         .onChange(of: model.repositories) {
             model.configureWatching(enabled: autoRefresh)
