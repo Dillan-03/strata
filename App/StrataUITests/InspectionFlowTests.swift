@@ -177,4 +177,22 @@ final class InspectionFlowTests: XCTestCase {
         let deny = app.descendants(matching: .any).matching(identifier: "itemRow.permission.project.Read(./.env)").firstMatch
         XCTAssertTrue(deny.exists)
     }
+
+    func testTheContextEstimateOpensWithItsBreakdown() throws {
+        let fixture = try makeFixture()
+        try Data("# Flow demo\nAlways run the tests.\n".utf8).write(to: fixture.repository.appendingPathComponent("CLAUDE.md"))
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        let button = app.descendants(matching: .any).matching(identifier: "contextEstimateButton").firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 20), "The summary bar doesn't show the estimate")
+        button.click()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "contextEstimateTotal").firstMatch.waitForExistence(timeout: 10))
+        app.buttons["Done"].click()
+    }
 }

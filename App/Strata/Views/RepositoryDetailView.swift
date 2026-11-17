@@ -92,6 +92,8 @@ struct RepositoryDetailView: View {
 private struct SummaryBar: View {
     @Environment(AppModel.self) private var model
     let report: InspectionReport
+    @State private var estimate: ContextEstimate?
+    @State private var isShowingEstimate = false
 
     var body: some View {
         let issues = report.diagnostics.filter { $0.severity != .info }
@@ -100,6 +102,7 @@ private struct SummaryBar: View {
             HStack(spacing: 12) {
                 issueStatus(issues.count)
                 Text("\(applied) apply to this repository").foregroundStyle(.secondary)
+                estimateButton
                 Spacer(minLength: 12)
                 ForEach(countedKinds) { entry in
                     Text("\(entry.kind.pluralTitle) \(entry.count)")
@@ -110,6 +113,7 @@ private struct SummaryBar: View {
             HStack(spacing: 12) {
                 issueStatus(issues.count)
                 Text("\(applied) apply").foregroundStyle(.secondary)
+                estimateButton
                 Spacer(minLength: 0)
             }
             HStack {
@@ -123,6 +127,28 @@ private struct SummaryBar: View {
         .padding(.vertical, 8)
         .background(.bar)
         .overlay(alignment: .bottom) { Divider() }
+        // Reads the instruction files once per scan, not on every redraw.
+        .task(id: report.scannedAt) { estimate = ContextEstimate(report: report) }
+        .sheet(isPresented: $isShowingEstimate) {
+            if let estimate {
+                ContextEstimateSheet(estimate: estimate)
+                    .environment(model)
+            }
+        }
+    }
+
+    @ViewBuilder private var estimateButton: some View {
+        if let estimate {
+            Button {
+                isShowingEstimate = true
+            } label: {
+                Label("≈\(ContextEstimateSheet.format(estimate.totalTokens)) tokens at launch", systemImage: "text.alignleft")
+                    .foregroundStyle(estimate.warnings.isEmpty ? Color.secondary : Color.orange)
+            }
+            .buttonStyle(.borderless)
+            .help("An estimate of the context this repository's instructions, skills and subagents take before your first message")
+            .accessibilityIdentifier("contextEstimateButton")
+        }
     }
 
     @ViewBuilder private func issueStatus(_ count: Int) -> some View {
