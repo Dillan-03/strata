@@ -108,4 +108,64 @@ final class FixFlowTests: XCTestCase {
         wait(for: [restored], timeout: 10)
         app.buttons["fixDoneButton"].click()
     }
+
+    func testDisablingAPluginEditsOnlyItsEntryAndCanBeUndone() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("strata-plugin-\(UUID().uuidString)")
+        self.root = root
+        let home = root.appendingPathComponent("home")
+        let repository = home.appendingPathComponent("code/plugin-demo")
+        let claude = home.appendingPathComponent(".claude")
+        let pluginRoot = claude.appendingPathComponent("plugins/cache/tools/kit/1.0.0")
+        let files: [(URL, String)] = [
+            (pluginRoot.appendingPathComponent(".claude-plugin/plugin.json"), #"{"name": "kit", "version": "1.0.0"}"#),
+            (pluginRoot.appendingPathComponent("skills/migrate/SKILL.md"), "---\ndescription: Migrate\n---\n"),
+            (
+                claude.appendingPathComponent("plugins/installed_plugins.json"),
+                #"{"version": 2, "plugins": {"kit@tools": [{"scope": "user", "installPath": "\#(pluginRoot.path)", "version": "1.0.0"}]}}"#
+            ),
+            (claude.appendingPathComponent("settings.json"), "{\n  \"model\": \"opus\",\n  \"enabledPlugins\": {\n    \"kit@tools\": true\n  }\n}\n"),
+            (repository.appendingPathComponent("README.md"), "# Demo\n"),
+        ]
+        for (url, contents) in files {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(contents.utf8).write(to: url)
+        }
+        let settings = claude.appendingPathComponent("settings.json")
+        let original = try String(contentsOf: settings, encoding: .utf8)
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-allowsFixes", "YES", "-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": repository.path,
+            "STRATA_UITEST_HOME": home.path,
+        ]
+        app.launch()
+
+        let row = app.descendants(matching: .any).matching(identifier: "itemRow.plugin.user.kit@tools").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 20), "The plugin isn't listed")
+        row.click()
+        let disable = app.buttons["fix.disablePlugin"]
+        XCTAssertTrue(disable.waitForExistence(timeout: 10), "The inspector doesn't offer Disable")
+        disable.click()
+        let confirm = app.buttons["confirmFixButton"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "The review didn't open")
+        XCTAssertEqual(try String(contentsOf: settings, encoding: .utf8), original, "Nothing changes before confirming")
+        confirm.click()
+
+        let undo = app.buttons["undoFixButton"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 10), "Disabling didn't report success")
+        XCTAssertEqual(
+            try String(contentsOf: settings, encoding: .utf8),
+            original.replacingOccurrences(of: "\"kit@tools\": true", with: "\"kit@tools\": false"),
+            "Only the plugin's entry changes"
+        )
+
+        undo.click()
+        let restored = expectation(
+            for: NSPredicate { _, _ in (try? String(contentsOf: settings, encoding: .utf8)) == original },
+            evaluatedWith: nil
+        )
+        wait(for: [restored], timeout: 10)
+        app.buttons["fixDoneButton"].click()
+    }
 }

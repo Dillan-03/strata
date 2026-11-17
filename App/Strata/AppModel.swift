@@ -203,26 +203,28 @@ final class AppModel {
         return FixPlanner.offer(for: item, in: report, environment: environment)
     }
 
-    func uninstallOffer(for item: ConfigItem) -> FixOffer {
+    /// Uninstalling a skill, command or subagent, turning a plugin off or on, or removing an MCP server.
+    func changeOffer(for item: ConfigItem) -> FixOffer {
         guard let report = selectedReport else { return .none }
-        return FixPlanner.uninstall(item, in: report, environment: environment)
+        return FixPlanner.change(for: item, in: report, environment: environment)
     }
 
-    /// Selects the item and opens its uninstall review. If it can't be uninstalled, the inspector says why.
-    func proposeUninstall(_ item: ConfigItem) {
+    /// Selects the item and opens the review for its change. If Strata can't make it, the inspector says why.
+    func proposeChange(_ item: ConfigItem) {
         reveal(item.id)
-        if case .available(let fixes) = uninstallOffer(for: item), let fix = fixes.first {
+        if case .available(let fixes) = changeOffer(for: item), let fix = fixes.first {
             proposedFix = fix
         }
     }
 
     /// Runs a fix the user approved in the repository it was offered for, then rescans so the lists show the result.
     func apply(_ fix: ConfigFix, in repositoryID: Repository.ID) async -> FixOutcome {
-        guard allowsFixes else { return .failed("Fixes are turned off in Settings, so Strata changed nothing.") }
+        guard allowsFixes else { return .failed("Changes are turned off in Settings, so Strata changed nothing.") }
         guard let report = reports[repositoryID] else { return .failed("Strata has no scan of this repository.") }
         let writer = ConfigWriter(
             backupDirectory: fixBackupDirectory,
-            allowedRoots: FixPlanner.allowedRoots(repositoryPath: report.repositoryPath, environment: environment)
+            allowedRoots: FixPlanner.allowedRoots(repositoryPath: report.repositoryPath, environment: environment),
+            allowedFiles: FixPlanner.allowedFiles(repositoryPath: report.repositoryPath, environment: environment)
         )
         let outcome: FixOutcome
         do {
@@ -239,9 +241,11 @@ final class AppModel {
     /// Puts back what a fix changed, unless something has changed there since.
     func undo(_ record: FixRecord) async -> FixOutcome {
         let roots = [environment.claudeDirectory] + repositories.map { $0.url.appendingPathComponent(".claude") }
+        let files = [environment.globalConfigFile] + repositories.map { $0.url.appendingPathComponent(".mcp.json") }
         let outcome: FixOutcome
         do {
-            outcome = .undone(try ConfigWriter(backupDirectory: fixBackupDirectory, allowedRoots: roots).undo(record))
+            let writer = ConfigWriter(backupDirectory: fixBackupDirectory, allowedRoots: roots, allowedFiles: files)
+            outcome = .undone(try writer.undo(record))
         } catch {
             outcome = .failed(error.localizedDescription)
         }
