@@ -169,7 +169,8 @@ final class FixFlowTests: XCTestCase {
         app.buttons["fixDoneButton"].click()
     }
 
-    /// A stand-in `claude` in the fixture home's ~/.local/bin records how Strata ran it.
+    /// A stand-in `claude` in the fixture home's ~/.local/bin records how Strata ran it. It's a link to a script in the
+    /// test bundle, because macOS won't run a script the sandboxed test runner writes itself (#127).
     func testUninstallingAPluginRunsClaudeInTheRepository() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("strata-plugin-uninstall-\(UUID().uuidString)")
         self.root = root
@@ -187,16 +188,14 @@ final class FixFlowTests: XCTestCase {
             ),
             (claude.appendingPathComponent("settings.json"), "{\n  \"enabledPlugins\": {\n    \"kit@tools\": true\n  }\n}\n"),
             (repository.appendingPathComponent("README.md"), "# Demo\n"),
-            (
-                fakeClaude,
-                "#!/bin/sh\necho \"$(pwd -P) $*\" > \"$(dirname \"$0\")/calls.txt\"\necho \"Successfully uninstalled plugin: kit (scope: user)\"\n"
-            ),
         ]
         for (url, contents) in files {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data(contents.utf8).write(to: url)
         }
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: fakeClaude.path)
+        let stub = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fake-claude", withExtension: "sh"), "fake-claude.sh isn't in the test bundle")
+        try FileManager.default.createDirectory(at: fakeClaude.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: fakeClaude, withDestinationURL: stub)
 
         let app = XCUIApplication()
         app.launchArguments = ["-allowsFixes", "YES", "-StrataUITesting"]
@@ -218,6 +217,9 @@ final class FixFlowTests: XCTestCase {
         confirm.click()
 
         XCTAssertTrue(app.buttons["pluginUninstallDone"].waitForExistence(timeout: 20), "The uninstall didn't finish")
+        let outcome = app.descendants(matching: .any).matching(identifier: "pluginUninstallResult").firstMatch
+        XCTAssertTrue(outcome.waitForExistence(timeout: 5), "The uninstall shows no outcome")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: calls.path), "claude didn't run. Strata said: \(outcome.label)")
         let recorded = try String(contentsOf: calls, encoding: .utf8)
         XCTAssertTrue(recorded.hasSuffix("plugin uninstall kit@tools --scope user --keep-data\n"), recorded)
         XCTAssertTrue(recorded.hasPrefix(repository.resolvingSymlinksInPath().path + " "), "It didn't run in the repository: \(recorded)")
