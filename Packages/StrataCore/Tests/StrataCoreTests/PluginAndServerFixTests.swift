@@ -90,6 +90,22 @@ final class PluginAndServerFixTests: XCTestCase {
         XCTAssertEqual(FixPlanner.shellQuoted(""), "''")
     }
 
+    func testPluginUninstallRunsTheDocumentedCommandWithoutAShell() throws {
+        try installPlugin(scope: "project")
+        let plugin = try XCTUnwrap(fixture.inspect().items.first { $0.kind == .plugin })
+        var uninstall = try XCTUnwrap(PluginUninstall(plugin))
+        XCTAssertEqual(uninstall.arguments, ["plugin", "uninstall", "kit@tools", "--scope", "project", "--keep-data"])
+        XCTAssertEqual(uninstall.command, "claude plugin uninstall kit@tools --scope project --keep-data")
+        XCTAssertEqual(uninstall.reinstallCommand, "claude plugin install kit@tools --scope project")
+        uninstall.keepsData = false
+        XCTAssertEqual(uninstall.arguments.last, "project", "Without --keep-data the data folder goes too")
+
+        let option = ConfigItem(
+            kind: .plugin, name: "--prune", scope: plugin.scope, source: plugin.source, metadata: plugin.metadata, stage: plugin.stage
+        )
+        XCTAssertNil(PluginUninstall(option), "An ID that reads as an option must never reach the command")
+    }
+
     // MARK: - MCP servers
 
     func testRemovingAProjectServerLeavesTheRestOfMcpJson() throws {

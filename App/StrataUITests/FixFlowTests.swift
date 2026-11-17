@@ -168,4 +168,59 @@ final class FixFlowTests: XCTestCase {
         wait(for: [restored], timeout: 10)
         app.buttons["fixDoneButton"].click()
     }
+
+    /// A stand-in `claude` in the fixture home's ~/.local/bin records how Strata ran it.
+    func testUninstallingAPluginRunsClaudeInTheRepository() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("strata-plugin-uninstall-\(UUID().uuidString)")
+        self.root = root
+        let home = root.appendingPathComponent("home")
+        let repository = home.appendingPathComponent("code/plugin-demo")
+        let claude = home.appendingPathComponent(".claude")
+        let pluginRoot = claude.appendingPathComponent("plugins/cache/tools/kit/1.0.0")
+        let fakeClaude = home.appendingPathComponent(".local/bin/claude")
+        let calls = home.appendingPathComponent(".local/bin/calls.txt")
+        let files: [(URL, String)] = [
+            (pluginRoot.appendingPathComponent(".claude-plugin/plugin.json"), #"{"name": "kit", "version": "1.0.0"}"#),
+            (
+                claude.appendingPathComponent("plugins/installed_plugins.json"),
+                #"{"version": 2, "plugins": {"kit@tools": [{"scope": "user", "installPath": "\#(pluginRoot.path)", "version": "1.0.0"}]}}"#
+            ),
+            (claude.appendingPathComponent("settings.json"), "{\n  \"enabledPlugins\": {\n    \"kit@tools\": true\n  }\n}\n"),
+            (repository.appendingPathComponent("README.md"), "# Demo\n"),
+            (
+                fakeClaude,
+                "#!/bin/sh\necho \"$(pwd -P) $*\" > \"$(dirname \"$0\")/calls.txt\"\necho \"Successfully uninstalled plugin: kit (scope: user)\"\n"
+            ),
+        ]
+        for (url, contents) in files {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(contents.utf8).write(to: url)
+        }
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: fakeClaude.path)
+
+        let app = XCUIApplication()
+        app.launchArguments = ["-allowsFixes", "YES", "-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": repository.path,
+            "STRATA_UITEST_HOME": home.path,
+        ]
+        app.launch()
+
+        let row = app.descendants(matching: .any).matching(identifier: "itemRow.plugin.user.kit@tools").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 20), "The plugin isn't listed")
+        row.click()
+        let uninstall = app.buttons["uninstallPlugin"]
+        XCTAssertTrue(uninstall.waitForExistence(timeout: 10), "The inspector doesn't offer Uninstall Plugin")
+        uninstall.click()
+        let confirm = app.buttons["confirmPluginUninstall"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "The uninstall review didn't open")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: calls.path), "Nothing runs before confirming")
+        confirm.click()
+
+        XCTAssertTrue(app.buttons["pluginUninstallDone"].waitForExistence(timeout: 20), "The uninstall didn't finish")
+        let recorded = try String(contentsOf: calls, encoding: .utf8)
+        XCTAssertTrue(recorded.hasSuffix("plugin uninstall kit@tools --scope user --keep-data\n"), recorded)
+        XCTAssertTrue(recorded.hasPrefix(repository.resolvingSymlinksInPath().path + " "), "It didn't run in the repository: \(recorded)")
+        app.buttons["pluginUninstallDone"].click()
+    }
 }

@@ -53,6 +53,12 @@ struct ContentView: View {
             ExportReportSheet()
                 .environment(model)
         }
+        .sheet(item: $model.pluginUninstall) { uninstall in
+            if let repository = model.selectedRepository {
+                PluginUninstallSheet(uninstall: uninstall, repository: repository)
+                    .environment(model)
+            }
+        }
         .sheet(isPresented: $model.isCheckingPluginUpdates) {
             PluginUpdatesSheet()
                 .environment(model)

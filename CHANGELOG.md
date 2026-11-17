@@ -13,6 +13,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 ### Changed
 
 - Adding a repository, from the Add Folder panel or a suggestion, now shows only its own configuration at first: the Repo, Local and Nested scope filters are on. Click **Clear** or a scope chip to see personal, managed and plugin items too.
+- **Uninstall Plugin…** in a plugin's inspector, when changes are on in Settings. It shows the exact `claude plugin uninstall` command, what Claude Code deletes, and the command to reinstall, then runs it in the repository's folder once you confirm. The plugin's data folder is kept unless you untick it. This is the only command Strata runs; the command is still shown to copy if you'd rather run it yourself.
 
 ## [0.5.0] - 2026-11-17
 

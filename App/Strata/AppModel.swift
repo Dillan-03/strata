@@ -18,6 +18,8 @@ final class AppModel {
     /// The last update check, clicked or automatic. Settings shows it, and the sidebar shows a new version.
     var updateCheckResult: UpdateCheckResult?
     var isCheckingForUpdates = false
+    /// A plugin uninstall waiting for the user to confirm it.
+    var pluginUninstall: PluginUninstall?
     /// The change Review Changes opens on, when it's opened from one item.
     var reviewSelection: PendingChange.ID?
     /// A fix waiting for approval on the fix review screen.

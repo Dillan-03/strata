@@ -26,7 +26,7 @@ What Strata does instead:
     - anything reached through a symbolic link
     - anything that changed since the fix was reviewed
 - **One network request, on click or opt-in.** **Check for Updates** in Settings sends one GET to GitHub's latest-release API through an ephemeral `URLSession` (no cookies, cache or stored credentials). **Check for updates automatically**, off by default, sends the same request when the app opens, at most once a day (`UpdateChecker.isAutomaticCheckDue`). There are no timers or background tasks. StrataCore's `UpdateChecker` parses the reply and builds the release link from the version, never from the response. The app never downloads or installs anything. Plugin update checks read the marketplace copies Claude Code keeps on disk; refreshing them is a command the user runs.
-- **No execution.** MCP server commands are displayed, never run.
+- **One command, on approval.** MCP server commands are displayed, never run. The only process Strata starts is `claude plugin uninstall`, from `PluginUninstallSheet` after the user confirms it, with arguments built by StrataCore's `PluginUninstall` and no shell.
 
 ## Generated project
 

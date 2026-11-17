@@ -168,10 +168,17 @@ private struct ItemDetail: View {
                         }
                     }
                     if let command {
-                        CommandRow(
-                            note: "To uninstall the plugin, run this in Terminal. Strata doesn't run commands.",
-                            command: command
-                        )
+                        if allowsFixes, let uninstall = PluginUninstall(item) {
+                            Button("Uninstall Plugin…") { model.pluginUninstall = uninstall }
+                                .help("Runs claude plugin uninstall after you confirm")
+                                .accessibilityIdentifier("uninstallPlugin")
+                            CommandRow(note: "Or run this in Terminal:", command: command)
+                        } else {
+                            CommandRow(
+                                note: "To uninstall the plugin, run this in Terminal, or turn on changes in Settings to let Strata run it.",
+                                command: command
+                            )
+                        }
                     }
                 }
             }
