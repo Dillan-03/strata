@@ -4,6 +4,8 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
 ### Added
 
 - **Permission rules** as their own items under Settings: every `allow`, `ask` and `deny` rule, extra directory and `defaultMode`, with the file that sets it. Rules a deny or ask rule certainly beats show as Overridden, repository allow rules that wait for workspace trust show as Conditional, and new allow rules get a security note in Review Changes.
@@ -104,6 +106,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
+[0.5.0]: https://github.com/Dillan-03/strata/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Dillan-03/strata/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Dillan-03/strata/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Dillan-03/strata/releases/tag/v0.2.0
