@@ -41,13 +41,16 @@ struct FixReviewSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            section(fix.action == .removeCopy ? "Moved to Backups" : "Replaced") {
+            section(fix.action == .replaceWithWinner ? "Replaced" : "Moved to Backups") {
                 fileList(preview.targetFiles)
             }
             if fix.action == .replaceWithWinner {
                 section("Copied In") { fileList(preview.sourceFiles) }
             }
-            section(fix.action == .removeCopy ? "What Goes" : "How the Main File Changes") {
+            if fix.action == .uninstall {
+                section("In a Running Claude Code Session") { pickup }
+            }
+            section(fix.action == .replaceWithWinner ? "How the Main File Changes" : "What Goes") {
                 DiffView(diff: preview.diff)
             }
         }
@@ -57,7 +60,7 @@ struct FixReviewSheet: View {
 
     private var steps: [String] {
         let target = model.abbreviatingHome(fix.targetURL.path)
-        let winner = model.abbreviatingHome(fix.winner.source.path)
+        let winner = model.abbreviatingHome(fix.winner?.source.path ?? "")
         var steps: [String]
         switch fix.action {
         case .removeCopy:
@@ -67,14 +70,38 @@ struct FixReviewSheet: View {
                 "Strata copies \(model.abbreviatingHome(fix.sourceURL?.path ?? "")) over \(target).",
                 "The old copy goes into Strata's backups first.",
             ]
-            if fix.winner.scope == .user, fix.target.scope == .project {
+            if fix.winner?.scope == .user, fix.target.scope == .project {
                 steps.append("This puts your personal copy in the repository, so everyone who uses the repository gets it.")
-            } else if fix.winner.scope == .project, fix.target.scope == .user {
+            } else if fix.winner?.scope == .project, fix.target.scope == .user {
                 steps.append("This puts the repository's copy in your personal folder, so every repository you open gets it.")
             }
+        case .uninstall:
+            steps = ["Strata moves \(target) into its backups."]
+            let name = fix.target.invocation ?? fix.target.name
+            switch fix.overridden.count {
+            case 0:
+                steps.append("This is the copy that runs, and no other copy takes its place, so \(name) won't be available any more.")
+            case 1:
+                let next = fix.overridden[0]
+                steps.append("This is the copy that runs. Once it's gone, the \(next.scope.title.lowercased()) copy runs instead: \(model.abbreviatingHome(next.source.path)).")
+            default:
+                steps.append("This is the copy that runs. Once it's gone, one of the \(fix.overridden.count) copies it overrides runs instead. Strata rescans and shows which.")
+            }
         }
-        steps.append("If either copy changes before you confirm, Strata stops and changes nothing. You can undo the fix afterwards.")
+        steps.append(fix.action == .replaceWithWinner
+            ? "If either copy changes before you confirm, Strata stops and changes nothing. You can undo the fix afterwards."
+            : "If this copy changes before you confirm, Strata stops and changes nothing. You can undo this afterwards.")
         return steps
+    }
+
+    private var pickup: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(fix.pickup.explanation)
+                .fixedSize(horizontal: false, vertical: true)
+            if let source = fix.pickup.source {
+                Link("Claude Code docs", destination: source)
+            }
+        }
     }
 
     // MARK: - After
@@ -87,6 +114,9 @@ struct FixReviewSheet: View {
             Text(outcome.message)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("fixResultMessage")
+            if fix.action == .uninstall, case .applied = outcome {
+                pickup
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -158,7 +188,8 @@ extension ConfigFix {
         let scope = target.scope.title.lowercased()
         switch action {
         case .removeCopy: return "Remove the \(scope) copy of \(name)?"
-        case .replaceWithWinner: return "Replace the \(scope) copy of \(name) with the \(winner.scope.title.lowercased()) one?"
+        case .replaceWithWinner: return "Replace the \(scope) copy of \(name) with the \(winner?.scope.title.lowercased() ?? "running") one?"
+        case .uninstall: return "Uninstall the \(scope) \(target.kind.title.lowercased()) \(name)?"
         }
     }
 }
@@ -169,6 +200,7 @@ extension ConfigFix.Action {
         switch self {
         case .removeCopy: "Remove…"
         case .replaceWithWinner: "Replace…"
+        case .uninstall: "Uninstall…"
         }
     }
 
@@ -176,14 +208,22 @@ extension ConfigFix.Action {
         switch self {
         case .removeCopy: "Remove Copy"
         case .replaceWithWinner: "Replace Copy"
+        case .uninstall: "Uninstall"
+        }
+    }
+
+    var pastTense: String {
+        switch self {
+        case .removeCopy: "Removed"
+        case .replaceWithWinner: "Replaced"
+        case .uninstall: "Uninstalled"
         }
     }
 }
 
 extension FixRecord {
     var summary: String {
-        let verb = action == .removeCopy ? "Removed" : "Replaced"
-        return "\(verb) \(itemKind.title.lowercased()) \(itemName) · \(date.formatted(date: .abbreviated, time: .shortened))"
+        "\(action.pastTense) \(itemKind.title.lowercased()) \(itemName) · \(date.formatted(date: .abbreviated, time: .shortened))"
     }
 }
 
@@ -195,7 +235,7 @@ extension FixOutcome {
 
     var title: String {
         switch self {
-        case .applied(let record): record.action == .removeCopy ? "Removed" : "Replaced"
+        case .applied(let record): record.action.pastTense
         case .undone: "Undone"
         case .failed: "The fix didn't run"
         }

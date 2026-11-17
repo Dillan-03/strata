@@ -27,6 +27,7 @@ private struct ItemDetail: View {
             changeSection
             statusSection
             fixSection
+            uninstallSection
             whySection
             definitionsSection
             kindSpecificSections
@@ -114,10 +115,51 @@ private struct ItemDetail: View {
                         }
                     }
                 } else {
-                    Text("Strata can remove this copy, or replace it with the one that runs. Turn on fixes in Settings to use them.")
+                    Text("Strata can remove this copy, or replace it with the one that runs. Turn on fixes and uninstalling in Settings to use them.")
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     SettingsLink { Text("Open Settings…") }
+                }
+            }
+        }
+    }
+
+    /// Overridden copies are uninstalled with Remove, in the Fix section, so this covers every other copy.
+    @ViewBuilder private var uninstallSection: some View {
+        if case .shadowed = item.applicability {
+            EmptyView()
+        } else {
+            switch model.uninstallOffer(for: item) {
+            case .none:
+                EmptyView()
+            case .unavailable(let reason):
+                Section("Uninstall") {
+                    Text(reason)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            case .available(let fixes):
+                Section("Uninstall") {
+                    if let failure = model.failedFixes[item.id] {
+                        Label("The last uninstall failed: \(failure)", systemImage: "xmark.octagon")
+                            .foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if allowsFixes {
+                        Text("Moves this \(item.kind.title.lowercased()) into Strata's backups. You'll see exactly what changes first.")
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        ForEach(fixes) { fix in
+                            Button(fix.action.buttonTitle) { model.proposedFix = fix }
+                                .help(fix.title)
+                                .accessibilityIdentifier("fix.\(fix.action.rawValue)")
+                        }
+                    } else {
+                        Text("Strata can uninstall this \(item.kind.title.lowercased()). Turn on fixes and uninstalling in Settings to use it.")
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        SettingsLink { Text("Open Settings…") }
+                    }
                 }
             }
         }

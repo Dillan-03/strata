@@ -91,6 +91,88 @@ final class ConfigFixTests: XCTestCase {
         XCTAssertTrue(reason.contains("symbolic link"))
     }
 
+    // MARK: - Uninstalling
+
+    private func uninstall(_ item: ConfigItem, in report: InspectionReport) -> FixOffer {
+        FixPlanner.uninstall(item, in: report, environment: fixture.environment)
+    }
+
+    private func uninstallFix(kind: ItemKind = .skill, scope: Scope) throws -> (fix: ConfigFix, report: InspectionReport) {
+        let report = fixture.inspect()
+        let item = try XCTUnwrap(report.items.first { $0.kind == kind && $0.scope == scope })
+        guard case .available(let fixes) = uninstall(item, in: report), let fix = fixes.first, fixes.count == 1 else {
+            XCTFail("Expected one uninstall fix for \(item.name), got \(uninstall(item, in: report))")
+            throw XCTSkip()
+        }
+        return (fix, report)
+    }
+
+    func testUninstallingTheCopyThatRunsNamesWhatTakesOverAndCanBeUndone() throws {
+        try makeOverriddenRepoSkill()
+        let (fix, report) = try uninstallFix(scope: .user)
+        let repoCopy = try XCTUnwrap(report.items.first { $0.kind == .skill && $0.scope == .project })
+        XCTAssertEqual(fix.action, .uninstall)
+        XCTAssertNil(fix.winner)
+        XCTAssertEqual(fix.overridden, [repoCopy], "The repository copy runs once the personal one is gone")
+        XCTAssertEqual(fix.targetURL.path, personalSkill.standardizedFileURL.path)
+        XCTAssertEqual(fix.pickup.timing, .live)
+
+        let original = try tree(personalSkill)
+        let writer = writer()
+        let record = try writer.apply(fix)
+        XCTAssertEqual(record.action, .uninstall)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: personalSkill.path))
+        let after = fixture.inspect()
+        XCTAssertEqual(after.items.filter { $0.kind == .skill }.map(\.scope), [.project])
+        XCTAssertTrue(after.items.first { $0.kind == .skill }?.applicability.isApplied ?? false, "The repository copy now runs")
+
+        try writer.undo(record)
+        XCTAssertEqual(try tree(personalSkill), original)
+    }
+
+    func testUninstallingACopyNothingBacksUpSaysNothingTakesOver() throws {
+        try fixture.write(".claude/agents/reviewer.md", in: fixture.repository, "---\nname: reviewer\ndescription: Reviews code\n---\nReview.\n")
+        let (fix, _) = try uninstallFix(kind: .agent, scope: .project)
+        XCTAssertEqual(fix.overridden, [])
+        XCTAssertEqual(fix.targetURL.lastPathComponent, "reviewer.md", "A subagent is uninstalled as its file")
+    }
+
+    func testAnOverriddenCopyIsUninstalledWithTheRemoveFix() throws {
+        try makeOverriddenRepoSkill()
+        let (fix, _) = try uninstallFix(scope: .project)
+        XCTAssertEqual(fix.action, .removeCopy)
+        XCTAssertNotNil(fix.winner)
+    }
+
+    func testUninstallIsRefusedOutsideTheWritableFolders() throws {
+        let report = fixture.inspect()
+        let expectations: [(Scope, String)] = [
+            (.plugin, "the acme plugin"), (.managed, "managed settings"), (.synced, "claude.ai"), (.nested, "~/.claude"),
+        ]
+        for (scope, phrase) in expectations {
+            let item = ConfigItem(
+                kind: .skill, name: "deploy", scope: scope,
+                source: SourceLocation(path: fixture.root.appendingPathComponent("elsewhere/deploy/SKILL.md").path), origin: "acme"
+            )
+            guard case .unavailable(let reason) = uninstall(item, in: report) else { return XCTFail("\(scope) should be refused") }
+            XCTAssertTrue(reason.contains(phrase), "\(scope): \(reason)")
+        }
+        let server = ConfigItem(kind: .mcpServer, name: "github", scope: .user, source: SourceLocation(path: "/tmp/.claude.json"))
+        XCTAssertEqual(uninstall(server, in: report), .none, "Only skills, commands and subagents are uninstalled here")
+    }
+
+    func testAnUninstallReviewedBeforeAnEditIsRefused() throws {
+        try makeOverriddenRepoSkill()
+        let (fix, _) = try uninstallFix(scope: .user)
+        try fixture.write("SKILL.md", in: personalSkill, Fixture.skill(description: "Edited after review"))
+
+        XCTAssertThrowsError(try writer().apply(fix)) { error in
+            guard case FixError.changedSinceReview = error else { return XCTFail("Unexpected error \(error)") }
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: personalSkill.appendingPathComponent("SKILL.md").path))
+        XCTAssertTrue(backupFolders.isEmpty)
+    }
+
     // MARK: - Applying and undoing
 
     func testRemovingKeepsTheCopyInBackupsAndUndoPutsItBack() throws {

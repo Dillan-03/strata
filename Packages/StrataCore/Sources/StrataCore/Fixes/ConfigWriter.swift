@@ -68,7 +68,7 @@ public struct ConfigWriter {
         var resultFingerprint: String?
         do {
             switch fix.action {
-            case .removeCopy:
+            case .removeCopy, .uninstall:
                 try fileManager.moveItem(at: target, to: backup)
             case .replaceWithWinner:
                 guard let source = fix.sourceURL else { throw FixError.failed("There's no copy to replace it with.") }
@@ -102,7 +102,7 @@ public struct ConfigWriter {
         }
 
         switch record.action {
-        case .removeCopy:
+        case .removeCopy, .uninstall:
             guard !exists(target) else {
                 throw FixError.undoBlocked("Something new is at \(target.lastPathComponent) now. Move it away, then undo.")
             }

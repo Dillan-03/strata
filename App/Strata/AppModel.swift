@@ -203,6 +203,19 @@ final class AppModel {
         return FixPlanner.offer(for: item, in: report, environment: environment)
     }
 
+    func uninstallOffer(for item: ConfigItem) -> FixOffer {
+        guard let report = selectedReport else { return .none }
+        return FixPlanner.uninstall(item, in: report, environment: environment)
+    }
+
+    /// Selects the item and opens its uninstall review. If it can't be uninstalled, the inspector says why.
+    func proposeUninstall(_ item: ConfigItem) {
+        reveal(item.id)
+        if case .available(let fixes) = uninstallOffer(for: item), let fix = fixes.first {
+            proposedFix = fix
+        }
+    }
+
     /// Runs a fix the user approved in the repository it was offered for, then rescans so the lists show the result.
     func apply(_ fix: ConfigFix, in repositoryID: Repository.ID) async -> FixOutcome {
         guard allowsFixes else { return .failed("Fixes are turned off in Settings, so Strata changed nothing.") }

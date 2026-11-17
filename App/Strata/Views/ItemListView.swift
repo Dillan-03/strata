@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ItemListView: View {
     @Environment(AppModel.self) private var model
+    @AppStorage(PreferenceKey.allowsFixes) private var allowsFixes = false
     let report: InspectionReport
     let formatter: PathFormatter
 
@@ -38,6 +39,11 @@ struct ItemListView: View {
                                 syncStatus: model.selectedRepositoryID.map { model.syncStatus(of: item.id, in: $0) } ?? .unchanged
                             )
                             .tag(item.id)
+                            .contextMenu {
+                                if allowsFixes, FixPlanner.fixableKinds.contains(item.kind), FixPlanner.writableScopes.contains(item.scope) {
+                                    Button("Uninstall…") { model.proposeUninstall(item) }
+                                }
+                            }
                         }
                     } header: {
                         Text("\(group.kind.pluralTitle) (\(group.items.count))")
