@@ -11,6 +11,11 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
     case instruction
     case setting
     case permission
+    case outputStyle
+    case statusLine
+    case keybinding
+    case lspServer
+    case monitor
 
     public var title: String {
         switch self {
@@ -23,6 +28,11 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .instruction: "Instruction File"
         case .setting: "Setting"
         case .permission: "Permission Rule"
+        case .outputStyle: "Output Style"
+        case .statusLine: "Status Line"
+        case .keybinding: "Keybinding"
+        case .lspServer: "LSP Server"
+        case .monitor: "Monitor"
         }
     }
 
@@ -37,6 +47,11 @@ public enum ItemKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .instruction: "Instructions"
         case .setting: "Settings"
         case .permission: "Permission Rules"
+        case .outputStyle: "Output Styles"
+        case .statusLine: "Status Lines"
+        case .keybinding: "Keybindings"
+        case .lspServer: "LSP Servers"
+        case .monitor: "Monitors"
         }
     }
 }

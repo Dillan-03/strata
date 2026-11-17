@@ -150,6 +150,31 @@ Not covered:
 - **Rules added in a session with `/permissions`** that aren't saved to a file.
 - **Whether a rule matches a particular call.**
 
+## Output styles, status line and keybindings
+
+- **Output styles** (`InterfaceScanner`) come from `output-styles/` in `~/.claude`, the repository's `.claude`, managed settings and each enabled plugin. The style's `name` comes from its frontmatter, or from the file name.
+  - **Which one applies:** the highest-precedence settings file that sets `outputStyle` picks it, so project settings beat user settings. A plugin style with `force-for-plugin` overrides that setting.
+  - **Names are case-sensitive:** a value that doesn't match a style exactly gives Claude Code's Default style, so Strata raises an issue.
+  - **Duplicates:** the docs don't say which wins when two folders have a style with the same name, so those show as **Unknown**.
+  - **Edits:** Claude Code reads style files at startup, so edits need a restart. ([Output styles](https://code.claude.com/docs/en/output-styles))
+- **Status line:**
+  - **Which one runs:** the highest-precedence `statusLine` wins.
+  - **Trust:** it stays blank until the folder is trusted, so it shows as **Conditional**.
+  - **Hook settings:** `disableAllHooks` outside managed settings, or managed `allowManagedHooksOnly`, leaves only a managed status line.
+  - **Edits:** Claude Code reloads settings and runs a new command as soon as you save. ([Status line](https://code.claude.com/docs/en/statusline))
+- **Keybindings:**
+  - **Items:** one per binding in `~/.claude/keybindings.json`. A `null` action unbinds a default.
+  - **Reserved keys:** Ctrl+C, Ctrl+D, Ctrl+M, Ctrl+[, Ctrl+I, Ctrl+H and Caps Lock can't be rebound, so a binding on one of them is shown as one that won't load.
+  - **Edits:** changes apply without a restart. ([Keybindings](https://code.claude.com/docs/en/keybindings))
+
+## Plugin LSP servers and monitors
+
+`PluginComponentScanner` lists what each plugin adds, with commands masked. Strata never starts these.
+
+- **LSP servers** come from `.lsp.json` at the plugin root first, then each config the manifest's `lspServers` names, in order. A server declared later with the same name replaces the earlier one, which shows as **Overridden**. ([LSP servers](https://code.claude.com/docs/en/plugins-reference#lspservers))
+- **Monitors** come from `monitors/monitors.json`, or from what the manifest's `experimental.monitors` names. They start at session start, or the first time a named skill runs, and don't start in `claude -p`. ([Monitors](https://code.claude.com/docs/en/plugins-reference#monitors))
+- **Turned-off plugins:** a turned-off plugin's servers and monitors are **Inactive**. Changes apply after `/reload-plugins`.
+
 ## Context at launch
 
 Strata estimates how much context a repository's configuration takes before the first message (`ContextEstimate`).

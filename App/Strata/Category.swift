@@ -36,10 +36,10 @@ enum Category: String, CaseIterable, Identifiable {
         case .skills: [.skill, .command]
         case .agents: [.agent]
         case .mcp: [.mcpServer]
-        case .plugins: [.plugin]
+        case .plugins: [.plugin, .lspServer, .monitor]
         case .hooks: [.hook]
         case .instructions: [.instruction]
-        case .settings: [.setting, .permission]
+        case .settings: [.setting, .permission, .outputStyle, .statusLine, .keybinding]
         }
     }
 

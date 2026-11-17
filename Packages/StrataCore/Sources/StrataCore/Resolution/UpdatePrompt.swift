@@ -78,6 +78,7 @@ public enum UpdatePrompt {
         case .plugin: return "The plugin \(name)"
         case .hook: return "The \(scope) \(item.name) hook"
         case .permission: return "The \(scope) permission rule \(name)"
+        case .outputStyle, .statusLine, .keybinding, .lspServer, .monitor: return "The \(scope) \(item.kind.title.lowercased()) \(name)"
         case .instruction: return "The \(scope) instruction file \(name)"
         case .setting: return "The \(scope) setting \(name)"
         }
@@ -178,6 +179,8 @@ public enum UpdatePrompt {
             case .plugin: return ["Stop using skills, subagents or tools from the \(name) plugin. Tell me if anything we're doing relied on them."]
             case .hook: return ["That hook no longer runs. Tell me if anything we're doing relied on it."]
             case .permission: return ["That permission rule no longer applies, so expect to be asked, or allowed, differently."]
+            case .outputStyle, .statusLine, .keybinding, .lspServer, .monitor:
+                return ["The \(item.kind.title.lowercased()) \(name) is gone. Tell me if anything we're doing relied on it."]
             case .instruction: return ["Stop following the instructions that came from \(file): that file is gone."]
             case .setting: return ["Take this into account for the rest of the session, and tell me if it affects what we're doing."]
             }
@@ -199,6 +202,8 @@ public enum UpdatePrompt {
             return ["Hooks run outside the conversation, so you won't see this one run. Tell me if what it does affects what we're doing."]
         case .permission:
             return ["Take this permission rule into account for the rest of the session."]
+        case .outputStyle, .statusLine, .keybinding, .lspServer, .monitor:
+            return ["The \(item.kind.title.lowercased()) \(name) changed. Some of these only apply after a restart or /reload-plugins."]
         case .instruction:
             return ["Read \(file) again and follow it for the rest of this session.", "Summarise what changed in a sentence or two."]
         case .setting:
