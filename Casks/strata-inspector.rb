@@ -1,6 +1,6 @@
 cask "strata-inspector" do
-  version "0.4.0"
-  sha256 "bab0d0d5c7b71e9363e07bfb05486f0aac1cb5ff6e0749307d437f4fdf530316"
+  version "0.5.0"
+  sha256 "b295204f66a3d1ac2c01791766610f7e63ced4113fd6b43d7a89308157b77b1c"
 
   url "https://github.com/Dillan-03/strata/releases/download/v#{version}/Strata-#{version}.zip"
   name "Strata"
