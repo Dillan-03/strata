@@ -36,7 +36,8 @@ final class CrossRepositorySearchTests: XCTestCase {
         let results = CrossRepositorySearch.results(for: ItemQuery(text: "lint"), in: reports, kinds: nil)
         XCTAssertTrue(results.shared.isEmpty)
         XCTAssertEqual(results.byRepository.map(\.repositoryID), [second])
-        XCTAssertEqual(results.count, 1)
+        let found = results.byRepository.flatMap(\.items).map { "\($0.kind) \($0.scope) \($0.name) \($0.source.path)" }
+        XCTAssertEqual(results.count, 1, "\(found)")
     }
 
     func testFiltersAndCategoryStillApply() {

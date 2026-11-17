@@ -70,8 +70,8 @@ struct CrossRepositoryResultsView: View {
 
 extension AppModel {
     var crossRepositoryResults: CrossRepositorySearch.Results {
-        let reports = repositories.compactMap { repository in reports[repository.id].map { (repository.id, $0) } }
-        return CrossRepositorySearch.results(for: query, in: reports, kinds: category == .issues ? [] : category.kinds)
+        let scanned = repositories.compactMap { repository in self.reports[repository.id].map { (repository.id, $0) } }
+        return CrossRepositorySearch.results(for: query, in: scanned, kinds: category == .issues ? [] : category.kinds)
     }
 
     /// Switches to the repository and selects the item there, keeping the search text.
