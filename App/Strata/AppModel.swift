@@ -472,7 +472,7 @@ final class AppModel {
         panel.prompt = "Add"
         panel.message = "Choose one or more repositories to inspect."
         guard panel.runModal() == .OK else { return }
-        panel.urls.forEach(add)
+        addChosen(panel.urls)
     }
 
     func presentLocatePanel(for id: Repository.ID) {
@@ -518,6 +518,19 @@ final class AppModel {
 
     private func persist() {
         store.save(repositories.map(RepositoryStore.entry(for:)))
+    }
+}
+
+extension AppModel {
+    /// Configuration that lives in the repository itself, as opposed to personal, managed, plugin or claude.ai items.
+    static let repositoryScopes: Set<Scope> = [.project, .local, .nested]
+
+    /// Adds folders the user chose, and shows only their own configuration. The scope chips above the list bring back
+    /// the rest, which is what explains an Overridden copy.
+    func addChosen(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        urls.forEach(add)
+        query.scopes = Self.repositoryScopes
     }
 }
 

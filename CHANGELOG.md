@@ -8,6 +8,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 - **Check for updates automatically** in Settings → About, off by default. When it's on, Strata asks GitHub for the latest release when it opens, at most once a day, and shows a notice at the bottom of the sidebar when there's a new version. Homebrew still does the upgrade; Strata never downloads anything.
 
+### Changed
+
+- Adding a repository, from the Add Folder panel or a suggestion, now shows only its own configuration at first: the Repo, Local and Nested scope filters are on. Click **Clear** or a scope chip to see personal, managed and plugin items too.
+
 ## [0.5.0] - 2026-11-17
 
 ### Added

@@ -186,7 +186,7 @@ private struct SuggestedRepositories: View {
                     .font(.headline)
                 Spacer()
                 if folders.count > 1 {
-                    Button("Add All") { folders.forEach(model.add) }
+                    Button("Add All") { model.addChosen(folders) }
                         .accessibilityIdentifier("addAllSuggestedRepositories")
                 }
             }
@@ -203,7 +203,7 @@ private struct SuggestedRepositories: View {
                             }
                             .lineLimit(1)
                             Spacer()
-                            Button("Add") { model.add(folder) }
+                            Button("Add") { model.addChosen([folder]) }
                                 .accessibilityLabel("Add \(folder.lastPathComponent)")
                                 .accessibilityIdentifier("suggestedRepository.\(folder.lastPathComponent)")
                         }

@@ -34,6 +34,16 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.selectedRepository?.displayName, "repo0")
     }
 
+    func testAddingChosenFoldersShowsOnlyTheirOwnItems() {
+        let model = makeModel()
+        model.add(folders[0])
+        XCTAssertTrue(model.query.scopes.isEmpty, "Launch and tests add folders without filtering")
+
+        model.addChosen([folders[1]])
+        XCTAssertEqual(model.query.scopes, [.project, .local, .nested])
+        XCTAssertEqual(model.selectedRepository?.displayName, "repo1")
+    }
+
     func testAddingTheSameFolderTwiceKeepsOneEntry() {
         let model = makeModel()
         model.add(folders[0])
