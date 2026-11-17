@@ -68,6 +68,7 @@ Every precedence rule Strata applies is written down, with a link to the Claude 
 
 - No accounts, analytics or telemetry.
 - One network request, only when you click **Check for Updates** in Settings: a GET to GitHub's API for this repository's latest release, with no cookies or account details. GitHub sees your IP address, as it would for any web request. Strata never downloads or installs anything. Homebrew does the upgrade.
+- **Report a Wrong Result…** shows you the text first, then opens a GitHub issue in your browser with home paths shortened to `~` and secrets masked. Strata sends nothing itself.
 - Strata never contacts plugin marketplaces. **Check for Plugin Updates…** compares against the marketplace copies already on your Mac, and shows the `claude plugin` commands that refresh and update them for you to run.
 - Read-only by default. Changes are off until you turn them on, and then they only write after you approve each one. They write only to `~/.claude`, `~/.claude.json`, and the inspected repository's `.claude` folder and `.mcp.json`, never through a symbolic link. JSON files are edited one entry at a time, leaving the rest of the file as it was, and every change keeps a backup in `~/Library/Application Support/Strata/Backups`.
 - MCP server commands are displayed, never run. Remote servers are never contacted.

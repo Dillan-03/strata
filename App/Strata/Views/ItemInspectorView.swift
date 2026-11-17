@@ -39,6 +39,9 @@ private struct ItemDetail: View {
                 Text("Strata reads files on disk. It can't see what a running Claude Code session has loaded.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                Button("Report a Wrong Result…") { model.reportWrongResult(item) }
+                    .help("Open a GitHub issue saying Claude Code behaves differently from what Strata shows")
+                    .accessibilityIdentifier("reportWrongResult")
             }
         }
         .formStyle(.grouped)

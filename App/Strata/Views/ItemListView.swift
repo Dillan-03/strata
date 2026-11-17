@@ -43,6 +43,7 @@ struct ItemListView: View {
                                 if allowsFixes, let title = Self.changeTitle(for: item) {
                                     Button(title) { model.proposeChange(item) }
                                 }
+                                Button("Report a Wrong Result…") { model.reportWrongResult(item) }
                             }
                         }
                     } header: {
