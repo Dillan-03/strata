@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- **Check for updates automatically** in Settings → About, off by default. When it's on, Strata asks GitHub for the latest release when it opens, at most once a day, and shows a notice at the bottom of the sidebar when there's a new version. Homebrew still does the upgrade; Strata never downloads anything.
+
 ## [0.5.0] - 2026-11-17
 
 ### Added

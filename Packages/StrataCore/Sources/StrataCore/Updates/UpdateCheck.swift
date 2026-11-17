@@ -105,6 +105,15 @@ public struct UpdateChecker: Sendable {
     public static let repository = "Dillan-03/strata"
     public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/\(repository)/releases/latest")!
 
+    /// Automatic checks, when the user turns them on, run at most this often.
+    public static let automaticCheckInterval: TimeInterval = 86_400
+
+    /// Due a day after the last automatic check, or straight away if the clock has gone back past it.
+    public static func isAutomaticCheckDue(lastChecked: Date?, now: Date) -> Bool {
+        guard let lastChecked else { return true }
+        return now < lastChecked || now.timeIntervalSince(lastChecked) >= automaticCheckInterval
+    }
+
     private let fetch: @Sendable (URL) async throws -> HTTPReply
 
     /// `fetch` makes the one request. Any error it throws counts as GitHub being unreachable.

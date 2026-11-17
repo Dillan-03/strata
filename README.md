@@ -11,7 +11,7 @@ It's for questions like *"Why isn't my repo's `/deploy` skill running?"* (a pers
 
 When configuration changes on disk, from any editor or a `git checkout`, **Review Changes** shows what changed since you last looked. It shows each change as a diff with secrets masked. It also shows the repositories each change reaches, and whether a running Claude Code session picks it up. One click copies a prompt you can paste into that session so it knows what changed.
 
-Strata only reads Claude Code configuration unless you turn on **changes** in Settings. With that on, it can uninstall a skill, command or subagent, remove an overridden copy or replace it with the copy that runs, disable or enable a plugin, and remove an MCP server. To uninstall a plugin, it shows the `claude plugin uninstall` command to copy, because Strata never runs commands. It always shows you exactly what will change first, keeps a backup, and lets you undo. It never runs MCP servers, and it makes no network requests unless you click **Check for Updates** in Settings.
+Strata only reads Claude Code configuration unless you turn on **changes** in Settings. With that on, it can uninstall a skill, command or subagent, remove an overridden copy or replace it with the copy that runs, disable or enable a plugin, and remove an MCP server. To uninstall a plugin, it shows the `claude plugin uninstall` command to copy, because Strata never runs commands. It always shows you exactly what will change first, keeps a backup, and lets you undo. It never runs MCP servers, and it makes no network requests unless you click **Check for Updates** in Settings or turn on automatic update checks.
 
 ![Strata's inspector for a /deploy skill: the global copy runs and the repository's copy is overridden](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/inspector.png)
 
@@ -70,7 +70,7 @@ Every precedence rule Strata applies is written down, with a link to the Claude 
 ## Privacy
 
 - No accounts, analytics or telemetry.
-- One network request, only when you click **Check for Updates** in Settings: a GET to GitHub's API for this repository's latest release, with no cookies or account details. GitHub sees your IP address, as it would for any web request. Strata never downloads or installs anything. Homebrew does the upgrade.
+- One network request, only when you click **Check for Updates** in Settings, or when Strata opens at most once a day if you turn on **Check for updates automatically** (off by default): a GET to GitHub's API for this repository's latest release, with no cookies or account details. GitHub sees your IP address, as it would for any web request. Strata never downloads or installs anything. Homebrew does the upgrade.
 - **Report a Wrong Result…** shows you the text first, then opens a GitHub issue in your browser with home paths shortened to `~` and secrets masked. Strata sends nothing itself.
 - Strata never contacts plugin marketplaces. **Check for Plugin Updates…** compares against the marketplace copies already on your Mac, and shows the `claude plugin` commands that refresh and update them for you to run.
 - Read-only by default. Changes are off until you turn them on, and then they only write after you approve each one. They write only to `~/.claude`, `~/.claude.json`, and the inspected repository's `.claude` folder and `.mcp.json`, never through a symbolic link. JSON files are edited one entry at a time, leaving the rest of the file as it was, and every change keeps a backup in `~/Library/Application Support/Strata/Backups`.

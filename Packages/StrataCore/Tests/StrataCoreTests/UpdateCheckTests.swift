@@ -107,6 +107,14 @@ final class UpdateCheckTests: XCTestCase {
         let unknown = await offline.check(currentVersion: "dev")
         XCTAssertEqual(unknown, .failed(.unknownCurrentVersion("dev")))
     }
+
+    func testAutomaticCheckIsDueOnceADay() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        XCTAssertTrue(UpdateChecker.isAutomaticCheckDue(lastChecked: nil, now: now), "Never checked")
+        XCTAssertFalse(UpdateChecker.isAutomaticCheckDue(lastChecked: now.addingTimeInterval(-3600), now: now), "Checked an hour ago")
+        XCTAssertTrue(UpdateChecker.isAutomaticCheckDue(lastChecked: now.addingTimeInterval(-86_400), now: now), "Checked a day ago")
+        XCTAssertTrue(UpdateChecker.isAutomaticCheckDue(lastChecked: now.addingTimeInterval(3600), now: now), "The clock went back")
+    }
 }
 
 private actor Requests {

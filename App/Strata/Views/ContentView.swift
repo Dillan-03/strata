@@ -92,14 +92,17 @@ struct SidebarView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Button {
-                model.presentAddRepositoryPanel()
-            } label: {
-                Label("Add Folder…", systemImage: "plus")
+            VStack(spacing: 0) {
+                UpdateAvailableNotice()
+                Button {
+                    model.presentAddRepositoryPanel()
+                } label: {
+                    Label("Add Folder…", systemImage: "plus")
+                }
+                .buttonStyle(.borderless)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
             }
-            .buttonStyle(.borderless)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
         }
     }
 }
