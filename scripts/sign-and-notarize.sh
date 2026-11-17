@@ -78,7 +78,18 @@ if [ -z "$identity" ]; then
   exit 1
 fi
 
-codesign --force --deep --options runtime --timestamp --sign "$identity" "$app"
+# Apple's timestamp server sometimes doesn't answer, and codesign fails with "A timestamp was expected but was not found".
+for attempt in 1 2 3; do
+  if codesign --force --deep --options runtime --timestamp --sign "$identity" "$app"; then
+    break
+  fi
+  if [ "$attempt" -eq 3 ]; then
+    echo "::error title=Signing::codesign failed 3 times. If it says a timestamp was expected, Apple's timestamp server is down: check https://developer.apple.com/system-status/ and re-run."
+    exit 1
+  fi
+  echo "::warning title=Signing::codesign attempt $attempt failed. Trying again in 20 seconds."
+  sleep 20
+done
 codesign --verify --strict --deep --verbose=2 "$app"
 
 echo "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$work/AuthKey.p8"
