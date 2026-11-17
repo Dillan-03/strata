@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- The issue count next to each repository in the sidebar now follows the scope and status filters, so it matches the list. Issues that aren't about a single item, such as a broken settings file, always count.
+
 ## [0.7.0] - 2026-11-17
 
 ### Added
