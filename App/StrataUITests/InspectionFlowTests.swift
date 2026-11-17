@@ -131,4 +131,29 @@ final class InspectionFlowTests: XCTestCase {
         let row = app.descendants(matching: .any).matching(identifier: "itemRow.hook.project.PreToolUse: Bash").firstMatch
         XCTAssertTrue(row.exists)
     }
+
+    func testReportingAWrongResultShowsTheTextFirst() throws {
+        let fixture = try makeFixture()
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        let row = app.descendants(matching: .any).matching(identifier: "itemRow.skill.project.deploy").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 20))
+        row.rightClick()
+        let report = app.menuItems["Report a Wrong Result…"]
+        XCTAssertTrue(report.waitForExistence(timeout: 5), "The context menu doesn't offer Report a Wrong Result")
+        report.click()
+
+        XCTAssertTrue(app.buttons["openWrongResultReport"].waitForExistence(timeout: 10), "The report isn't shown before opening")
+        let body = app.descendants(matching: .any).matching(identifier: "wrongResultBody").firstMatch
+        XCTAssertTrue(body.exists)
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", fixture.home.path)).firstMatch.exists,
+                       "The home folder path shouldn't appear")
+        app.buttons["Cancel"].click()
+    }
 }

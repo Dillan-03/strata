@@ -17,6 +17,8 @@ final class AppModel {
     var reviewSelection: PendingChange.ID?
     /// A fix waiting for approval on the fix review screen.
     var proposedFix: ConfigFix?
+    /// The report being shown before the browser opens it.
+    var wrongResultReport: WrongResultReport?
     /// The last fix that failed for each item, shown in its inspector until a fix succeeds.
     private(set) var failedFixes: [ConfigItem.ID: String] = [:]
     /// Fixes Strata made, newest first, read from their backups.
