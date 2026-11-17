@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- **Filter chips** above the item list for status, scope and Has Issues. Each shows how many items it would show, chips that match nothing are hidden, and they share their state with the Filter menu.
+
 ## [0.2.0] - 2026-11-16
 
 The first signed release, with change tracking: see what changed in your Claude Code configuration since you last looked, and fix overridden copies.

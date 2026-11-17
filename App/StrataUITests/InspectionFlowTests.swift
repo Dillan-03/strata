@@ -66,4 +66,33 @@ final class InspectionFlowTests: XCTestCase {
         let skillsSection = app.staticTexts["Skills (2)"]
         XCTAssertTrue(skillsSection.waitForExistence(timeout: 10))
     }
+
+    func testFilterChipFiltersTheListAndTicksTheMenu() throws {
+        let fixture = try makeFixture()
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["issuesSummary"].waitForExistence(timeout: 20))
+        app.typeKey("2", modifierFlags: .command)
+        XCTAssertTrue(app.staticTexts["Skills (2)"].waitForExistence(timeout: 10))
+
+        let overridden = app.descendants(matching: .any).matching(identifier: "filterChip.status.overridden").firstMatch
+        XCTAssertTrue(overridden.waitForExistence(timeout: 5))
+        overridden.click()
+        XCTAssertTrue(app.staticTexts["Skills (1)"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "filterChip.clear").firstMatch.exists)
+
+        // XCUITest can't read a menu item's tick, so prove it's shared: choosing Overridden in the menu turns it off.
+        app.descendants(matching: .any).matching(identifier: "filterMenu").firstMatch.click()
+        let menuItem = app.menuItems["Overridden"]
+        XCTAssertTrue(menuItem.waitForExistence(timeout: 5))
+        menuItem.click()
+        XCTAssertTrue(app.staticTexts["Skills (2)"].waitForExistence(timeout: 5), "Expected the menu to show Overridden ticked and turn it off")
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "filterChip.clear").firstMatch.exists)
+    }
 }

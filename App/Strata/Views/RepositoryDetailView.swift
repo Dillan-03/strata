@@ -18,6 +18,7 @@ struct RepositoryDetailView: View {
                     if model.category == .issues {
                         DiagnosticsListView(report: report, formatter: model.pathFormatter(for: repository))
                     } else {
+                        FilterChips(items: model.categoryItems, report: report)
                         ItemListView(report: report, formatter: model.pathFormatter(for: repository))
                     }
                 }

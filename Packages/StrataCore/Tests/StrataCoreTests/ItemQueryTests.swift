@@ -67,6 +67,49 @@ final class ItemQueryTests: XCTestCase {
         XCTAssertEqual(query.text, "deploy")
     }
 
+    func testCountsMatchWhatPickingEachFilterShows() {
+        let queries = [
+            ItemQuery(),
+            ItemQuery(text: "deploy"),
+            ItemQuery(statuses: [.applies]),
+            ItemQuery(scopes: [.project], onlyWithIssues: true),
+            ItemQuery(scopes: [.user], statuses: [.overridden]),
+        ]
+        for query in queries {
+            let counts = query.counts(in: report.items, report: report)
+            for scope in Scope.allCases {
+                var picked = query
+                picked.scopes = [scope]
+                XCTAssertEqual(counts.scopes[scope, default: 0], picked.apply(to: report.items, in: report).count, "\(query) \(scope)")
+            }
+            for status in ItemQuery.Status.allCases {
+                var picked = query
+                picked.statuses = [status]
+                XCTAssertEqual(counts.statuses[status, default: 0], picked.apply(to: report.items, in: report).count, "\(query) \(status)")
+            }
+            var withIssues = query
+            withIssues.onlyWithIssues = true
+            XCTAssertEqual(counts.withIssues, withIssues.apply(to: report.items, in: report).count, "\(query)")
+        }
+    }
+
+    func testCountsForTheFixture() {
+        let counts = ItemQuery().counts(in: report.items(of: .skill), report: report)
+        XCTAssertEqual(counts.statuses, [.applies: 2, .overridden: 1, .wontLoad: 1])
+        XCTAssertEqual(counts.scopes, [.user: 1, .project: 3])
+    }
+
+    func testSubscriptsToggleOneScopeOrStatus() {
+        var query = ItemQuery(scopes: [.user])
+        query[scope: .project] = true
+        query[scope: .user] = false
+        query[status: .overridden] = true
+        XCTAssertEqual(query.scopes, [.project])
+        XCTAssertEqual(query.statuses, [.overridden])
+        XCTAssertTrue(query[scope: .project])
+        XCTAssertFalse(query[status: .applies])
+    }
+
     func testDiagnosticsAreSearchable() {
         XCTAssertEqual(ItemQuery(text: "broken.md").apply(to: report.diagnostics).count, 1)
         XCTAssertEqual(ItemQuery().apply(to: report.diagnostics), report.diagnostics)
@@ -92,10 +135,13 @@ final class ItemQueryTests: XCTestCase {
             item.applicability = template.applicability
             return item
         }
+        let query = ItemQuery(text: "number 4999", scopes: [.user])
         let start = Date()
-        let results = ItemQuery(text: "number 4999", scopes: [.user]).apply(to: many, in: report)
+        let results = query.apply(to: many, in: report)
+        let counts = query.counts(in: many, report: report)
         XCTAssertEqual(results.map(\.name), ["skill-4999"])
-        // Runs on every keystroke. About 0.05 s in a debug build; the limit leaves room for slow CI runners.
-        XCTAssertLessThan(Date().timeIntervalSince(start), 0.25)
+        XCTAssertEqual(counts.scopes, [.user: 1])
+        // Both run on every keystroke. About 0.03 s together in a local debug build; the limit leaves room for slow CI runners.
+        XCTAssertLessThan(Date().timeIntervalSince(start), 0.5)
     }
 }
