@@ -1,19 +1,25 @@
 import Foundation
 
-/// A change Strata can make to a copy that another copy overrides, but only when the user asks and approves it.
+/// A change Strata can make to a skill, command or subagent, but only when the user asks and approves it.
 public struct ConfigFix: Hashable, Sendable, Identifiable {
     public enum Action: String, Hashable, Codable, Sendable {
         /// Moves the overridden copy into Strata's backups.
         case removeCopy
         /// Overwrites the overridden copy with the copy that runs, keeping the old one in Strata's backups.
         case replaceWithWinner
+        /// Moves a copy nothing overrides into Strata's backups. Overridden copies get `removeCopy` instead.
+        case uninstall
     }
 
     public let action: Action
-    /// The overridden copy the fix changes.
+    /// The copy the fix changes.
     public let target: ConfigItem
-    /// The copy that runs.
-    public let winner: ConfigItem
+    /// The copy that runs instead of the target. Nil when the target is the copy that runs.
+    public let winner: ConfigItem?
+    /// For an uninstall: the copies the target overrides. One of them runs once it's gone.
+    public let overridden: [ConfigItem]
+    /// When a Claude Code session that's already running stops seeing the target, as the docs describe it.
+    public let pickup: SessionPickup
     /// What the fix moves or overwrites: a skill's folder, or a command's or subagent's file.
     public let targetURL: URL
     /// What a replacement copies from: the winner's folder or file.
@@ -38,8 +44,8 @@ public enum FixOffer: Hashable, Sendable {
 /// Works out which fixes Strata offers. It only ever offers to change files in the user's Claude directory or the
 /// inspected repository's `.claude` folder, and never through a symbolic link.
 public enum FixPlanner {
-    static let fixableKinds: Set<ItemKind> = [.skill, .command, .agent]
-    static let writableScopes: Set<Scope> = [.user, .project]
+    public static let fixableKinds: Set<ItemKind> = [.skill, .command, .agent]
+    public static let writableScopes: Set<Scope> = [.user, .project]
 
     public static func offer(
         for item: ConfigItem,
@@ -51,23 +57,17 @@ public enum FixPlanner {
               fixableKinds.contains(item.kind),
               let winner = report.item(withID: winnerID) else { return .none }
 
-        guard writableScopes.contains(item.scope) else {
-            return .unavailable("Strata only changes copies in ~/.claude or this repository's .claude folder. This one is \(item.scope.title.lowercased()).")
-        }
         let roots = allowedRoots(repositoryPath: report.repositoryPath, environment: environment)
-        guard let target = unit(for: item), let targetRoot = roots.first(where: { contains($0, target) }) else {
-            return .unavailable("Strata couldn't place this copy inside ~/.claude or the repository's .claude folder.")
+        let target: (url: URL, fingerprint: String)
+        switch writableUnit(for: item, roots: roots, fileManager: fileManager) {
+        case .success(let unit): target = unit
+        case .failure(let refusal): return .unavailable(refusal.reason)
         }
-        if let link = symbolicLink(between: targetRoot, and: target, fileManager: fileManager) {
-            return .unavailable("\(link.lastPathComponent) is a symbolic link. Change the copy where it points instead.")
-        }
-        guard let targetFingerprint = try? Fingerprint.ofTree(target, fileManager: fileManager) else {
-            return .unavailable("Strata couldn't read this copy.")
-        }
+        let pickup = ChangeDetector.pickup(.deleted, item, old: report)
 
         var fixes = [ConfigFix(
-            action: .removeCopy, target: item, winner: winner, targetURL: target,
-            sourceURL: nil, targetFingerprint: targetFingerprint, sourceFingerprint: nil
+            action: .removeCopy, target: item, winner: winner, overridden: [], pickup: pickup, targetURL: target.url,
+            sourceURL: nil, targetFingerprint: target.fingerprint, sourceFingerprint: nil
         )]
         if winner.kind == item.kind,
            writableScopes.contains(winner.scope),
@@ -76,11 +76,72 @@ public enum FixPlanner {
            symbolicLink(between: sourceRoot, and: source, fileManager: fileManager) == nil,
            let sourceFingerprint = try? Fingerprint.ofTree(source, fileManager: fileManager) {
             fixes.append(ConfigFix(
-                action: .replaceWithWinner, target: item, winner: winner, targetURL: target,
-                sourceURL: source, targetFingerprint: targetFingerprint, sourceFingerprint: sourceFingerprint
+                action: .replaceWithWinner, target: item, winner: winner, overridden: [], pickup: pickup, targetURL: target.url,
+                sourceURL: source, targetFingerprint: target.fingerprint, sourceFingerprint: sourceFingerprint
             ))
         }
         return .available(fixes)
+    }
+
+    /// Offers to uninstall a skill, command or subagent. An overridden copy gets the Remove fix, which does the same.
+    public static func uninstall(
+        _ item: ConfigItem,
+        in report: InspectionReport,
+        environment: ScanEnvironment,
+        fileManager: FileManager = .default
+    ) -> FixOffer {
+        guard fixableKinds.contains(item.kind) else { return .none }
+        if case .shadowed = item.applicability {
+            guard case .available(let fixes) = offer(for: item, in: report, environment: environment, fileManager: fileManager) else {
+                return offer(for: item, in: report, environment: environment, fileManager: fileManager)
+            }
+            return .available(fixes.filter { $0.action == .removeCopy })
+        }
+        let roots = allowedRoots(repositoryPath: report.repositoryPath, environment: environment)
+        switch writableUnit(for: item, roots: roots, fileManager: fileManager) {
+        case .failure(let refusal):
+            return .unavailable(refusal.reason)
+        case .success(let target):
+            let overridden = report.items.filter { $0.applicability == .shadowed(by: item.id) }
+            return .available([ConfigFix(
+                action: .uninstall, target: item, winner: nil, overridden: overridden,
+                pickup: ChangeDetector.pickup(.deleted, item, old: report), targetURL: target.url,
+                sourceURL: nil, targetFingerprint: target.fingerprint, sourceFingerprint: nil
+            )])
+        }
+    }
+
+    struct Refusal: Error {
+        let reason: String
+    }
+
+    /// The file or folder Strata would change for an item, checked against everything it refuses.
+    static func writableUnit(for item: ConfigItem, roots: [URL], fileManager: FileManager) -> Result<(url: URL, fingerprint: String), Refusal> {
+        switch item.scope {
+        case .user, .project:
+            break
+        case .plugin:
+            let plugin = item.origin.map { "the \($0) plugin" } ?? "its plugin"
+            return .failure(Refusal(reason: "This comes from \(plugin). Uninstall or disable the plugin instead."))
+        case .managed:
+            return .failure(Refusal(reason: "Your organisation deploys this through managed settings, so Strata won't change it."))
+        case .synced:
+            return .failure(Refusal(reason: "This is synced from your claude.ai account. Remove it there."))
+        case .local, .nested, .ancestor:
+            return .failure(Refusal(
+                reason: "Strata only changes copies in ~/.claude or this repository's .claude folder. This one is \(item.scope.title.lowercased())."
+            ))
+        }
+        guard let target = unit(for: item), let root = roots.first(where: { contains($0, target) }) else {
+            return .failure(Refusal(reason: "Strata couldn't place this copy inside ~/.claude or the repository's .claude folder."))
+        }
+        if let link = symbolicLink(between: root, and: target, fileManager: fileManager) {
+            return .failure(Refusal(reason: "\(link.lastPathComponent) is a symbolic link. Change the copy where it points instead."))
+        }
+        guard let fingerprint = try? Fingerprint.ofTree(target, fileManager: fileManager) else {
+            return .failure(Refusal(reason: "Strata couldn't read this copy."))
+        }
+        return .success((target, fingerprint))
     }
 
     /// The only folders Strata writes in: the user's Claude directory and the inspected repository's `.claude`.
@@ -131,8 +192,8 @@ public struct FixPreview: Hashable, Sendable {
         targetFiles = Self.files(in: fix.targetURL, fileManager: fileManager)
         sourceFiles = fix.sourceURL.map { Self.files(in: $0, fileManager: fileManager) } ?? []
         let before = Self.mainText(fix.targetURL, kind: fix.target.kind).map(ItemContent.document)
-        let after = fix.sourceURL.flatMap { Self.mainText($0, kind: fix.winner.kind) }.map(ItemContent.document)
-        diff = ConfigDiff(before: before, after: fix.action == .removeCopy ? nil : after)
+        let after = fix.sourceURL.flatMap { Self.mainText($0, kind: fix.winner?.kind ?? fix.target.kind) }.map(ItemContent.document)
+        diff = ConfigDiff(before: before, after: fix.action == .replaceWithWinner ? after : nil)
     }
 
     private static func files(in url: URL, fileManager: FileManager) -> [String] {

@@ -59,13 +59,13 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Section("Fixes") {
-                Toggle("Let Strata fix overridden copies", isOn: $allowsFixes)
+            Section("Fixes and Uninstalling") {
+                Toggle("Let Strata fix and uninstall skills, commands and subagents", isOn: $allowsFixes)
                     .accessibilityIdentifier("allowsFixesToggle")
                 Text(
-                    "Off by default. When it's on, a skill, command or subagent in ~/.claude or a repository's .claude folder that "
-                        + "another copy overrides can be removed, or replaced with the copy that runs. Every fix shows you what it will "
-                        + "change first, keeps a backup, and can be undone here."
+                    "Off by default. When it's on, Strata can uninstall a skill, command or subagent in ~/.claude or a repository's "
+                        + ".claude folder, and remove an overridden copy or replace it with the copy that runs. Every change shows you "
+                        + "what it will do first, keeps a backup, and can be undone here."
                 )
                     .font(.callout)
                     .foregroundStyle(.secondary)
