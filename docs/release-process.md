@@ -26,7 +26,7 @@ Nobody edits `MARKETING_VERSION`, moves changelog entries or pushes tags. Mergin
 
    The branch is rebuilt from `main` after every merge, so it's always up to date and the version always covers everything merged. Don't edit it: change `## [Unreleased]` in a normal PR instead. To refresh the release date, run **Actions → Release PR → Run workflow**.
 
-   CI's **Release check** says what each PR does: "Merging this updates the Release <version> PR" on a normal PR, and "Merging this releases <version>" on the release PR.
+   CI's **Release check** says what each PR does: "Merging this updates the Release <version> PR" on a normal PR, and "This change releases <version>" on the release PR, the only PR that changes `MARKETING_VERSION`. CI's **Changelog check** fails a PR that adds entries to an existing release section. If a feature branch was cut before the release PR merged, its line can otherwise end up in the release that just shipped without it (#125).
 2. When you want to ship, click **Approve workflows to run** on the release PR, then approve and merge it once CI is green. GitHub holds CI on PRs opened by the workflow token until someone approves it, and the PR can't merge without those checks. The push to `main` starts `.github/workflows/release.yml`, which runs these jobs in order. Each starts only if the one before it passed.
    - **Plan** (Linux): sees that `v<version>` isn't released yet, so this push is a release. It checks:
      - the commit is on `main`
@@ -80,7 +80,7 @@ Setup steps are in [#22](https://github.com/Dillan-03/strata/issues/22). To conf
 | --- | --- |
 | `scripts/build-release.sh` | Generates the project and builds a universal Release app to `build/Release/Strata.app` |
 | `scripts/sign-and-notarize.sh` | Developer ID signing and notarisation, or an ad-hoc fallback |
-| `scripts/next-version.py [--check <version>]` | Prints the next version from the changelog, or checks a release version against it (Release PR, Plan and CI's Release check) |
+| `scripts/next-version.py [--check <version>] [--against <base changelog>]` | Prints the next version from the changelog, checks a release version against it (Release PR, Plan and CI's Release check), or refuses new entries in existing releases (CI's Changelog check) |
 | `scripts/package-release.sh <version>` | Zips the app to `dist/` with a `.sha256` file and checks the version |
 | `scripts/smoke-test-app.sh <app>` | Launches the app headlessly and checks it stays up |
 | `scripts/render-cask.sh <version> <sha256> [url]` | Writes the cask from `packaging/strata-inspector.rb.template` |

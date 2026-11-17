@@ -129,6 +129,41 @@ class CheckTests(unittest.TestCase):
             self.check(upcoming(""), "v0.2")
 
 
+class AgainstTests(unittest.TestCase):
+    def check(self, base: str, head: str) -> str:
+        return next_version.check_against(next_version.parse(base), next_version.parse(head))
+
+    def released(self, unreleased: str = "", fixed: str = "- A crash.") -> str:
+        return changelog(unreleased, ("0.2.0", f"### Fixed\n\n{fixed}"), ("0.1.0", "### Added\n\n- First release."))
+
+    def test_new_entry_under_unreleased_is_fine(self):
+        self.assertIn("all under Unreleased", self.check(self.released(), self.released("### Added\n\n- A feature.")))
+
+    def test_new_entry_in_an_existing_release_is_refused(self):
+        head = self.released(fixed="- A crash.\n- **Uninstall Plugin…** in a plugin's inspector.")
+        with self.assertRaisesRegex(next_version.ChangelogError,
+                                    r"adds 1 entry to '## \[0\.2\.0\]'.*starts '- \*\*Uninstall Plugin"):
+            self.check(self.released(), head)
+
+    def test_counts_several_new_entries(self):
+        head = self.released(fixed="- A crash.\n- Two.\n- Three.")
+        with self.assertRaisesRegex(next_version.ChangelogError, "adds 2 entries"):
+            self.check(self.released(), head)
+
+    def test_release_pr_creating_a_new_section_is_fine(self):
+        base = self.released("### Added\n\n- A feature.")
+        head = changelog("", ("0.3.0", "### Added\n\n- A feature."), ("0.2.0", "### Fixed\n\n- A crash."),
+                         ("0.1.0", "### Added\n\n- First release."))
+        self.assertIn("all under Unreleased", self.check(base, head))
+
+    def test_rewording_an_existing_entry_is_fine(self):
+        self.assertIn("all under Unreleased", self.check(self.released(), self.released(fixed="- A crash on launch.")))
+
+    def test_removing_an_entry_is_fine(self):
+        base = self.released(fixed="- A crash.\n- Another.")
+        self.assertIn("all under Unreleased", self.check(base, self.released()))
+
+
 class RepositoryChangelogTests(unittest.TestCase):
     def test_changelog_uses_only_known_headings(self):
         path = SCRIPT.parent.parent / "CHANGELOG.md"
@@ -158,6 +193,16 @@ class CommandLineTests(unittest.TestCase):
         result = self.run_script(text, "--check", "0.1.1")
         self.assertEqual(result.returncode, 1)
         self.assertTrue(result.stdout.startswith("::error title=Version check::0.1.1 doesn't match"))
+
+    def test_against_failure_is_an_annotation_and_exit_1(self):
+        base = changelog("", ("0.1.0", "### Added\n\n- First."))
+        head = changelog("", ("0.1.0", "### Added\n\n- First.\n- Snuck in."))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "BASE.md"
+            path.write_text(base, encoding="utf-8")
+            result = self.run_script(head, "--against", str(path))
+        self.assertEqual(result.returncode, 1)
+        self.assertTrue(result.stdout.startswith("::error title=Changelog check::This change adds 1 entry to '## [0.1.0]'"))
 
     def test_missing_changelog_is_reported(self):
         result = subprocess.run([sys.executable, str(SCRIPT), "--changelog", "/nonexistent/CHANGELOG.md"],
