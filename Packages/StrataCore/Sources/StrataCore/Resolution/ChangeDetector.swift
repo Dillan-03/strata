@@ -56,10 +56,18 @@ public enum ChangeDetector {
         static let plugins = "https://code.claude.com/docs/en/plugins/install#keep-plugins-updated"
         static let mcp = "https://code.claude.com/docs/en/mcp"
         static let memory = "https://code.claude.com/docs/en/memory"
+        static let hooks = "https://code.claude.com/docs/en/hooks#disable-or-remove-hooks"
     }
 
     /// Settings Claude Code reads once, at session start.
     static let startupOnlySettings: Set<String> = ["model", "effortLevel", "modelSettings"]
+
+    private static func hookPickup(_ item: ConfigItem) -> SessionPickup {
+        if item.scope == .plugin {
+            return SessionPickup(.reloadPlugins, "Plugin hooks change with their plugin. Run /reload-plugins, or start a new session.", source: Docs.plugins)
+        }
+        return SessionPickup(.live, "Claude Code's file watcher picks up hook edits in settings files without a restart.", source: Docs.hooks)
+    }
 
     static func pickup(_ kind: ConfigChange.Kind, _ item: ConfigItem, old: InspectionReport) -> SessionPickup {
         switch item.kind {
@@ -109,6 +117,9 @@ public enum ChangeDetector {
 
         case .plugin:
             return SessionPickup(.reloadPlugins, "Plugin changes apply after /reload-plugins, or in a new session.", source: Docs.plugins)
+
+        case .hook:
+            return hookPickup(item)
 
         case .mcpServer:
             if item.scope == .plugin {

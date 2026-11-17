@@ -117,6 +117,22 @@ A plugin enabled by the repository's `.claude/settings.json` loads only after wo
 
 `installed_plugins.json` isn't formally documented. Strata reads both the object-per-plugin and array-of-installs shapes and reports anything else as an unrecognised format.
 
+## Hooks
+
+Strata lists every hook handler as its own item, showing its event, matcher, type, what it runs, and the file that declares it (`HookScanner`). Commands, URLs and prompts are masked like any other value.
+
+- **Where they come from:** `hooks` in managed, user, project and local settings. For each enabled plugin, they also come from `hooks/hooks.json` and the manifest's `hooks`, which can be a file, an inline event map, or a list of both. A plugin hooks file must have the `{"hooks": …}` wrapper, or Claude Code won't load it, so Strata skips it too. ([Hook locations](https://code.claude.com/docs/en/hooks#configuration), [plugin hooks](https://code.claude.com/docs/en/plugins-reference#hooks))
+- **They add up:** hooks merge across settings files rather than overriding each other, and a plugin's hooks merge with them. So every hook applies, and none is "overridden". A handler defined identically in more than one settings file runs once, so Strata marks the lower-precedence copies inactive. A plugin's copy stays separate. ([Hook handler fields](https://code.claude.com/docs/en/hooks#hook-handler-fields))
+- **Workspace trust:** in an interactive session, Claude Code holds back hooks from every settings file, including `~/.claude/settings.json`, until the folder is trusted. Strata can't read trust, so these hooks are **Conditional**. Plugin hooks follow their plugin: Conditional when the repository enables it. ([Workspace trust](https://code.claude.com/docs/en/hooks#workspace-trust))
+- **`disableAllHooks`:** Strata takes the value left after settings precedence. `true` in user, project or local settings turns off user, project, local and plugin hooks, but managed hooks and plugins force-enabled by managed settings keep running. `true` in managed settings turns off every hook. ([Disable or remove hooks](https://code.claude.com/docs/en/hooks#disable-or-remove-hooks), [`disableAllHooks`](https://code.claude.com/docs/en/settings-reference#disableallhooks))
+- **`allowManagedHooksOnly`** in managed settings turns off user, project, local and plugin hooks. The exception is plugins that managed `enabledPlugins` force-enables. ([`allowManagedHooksOnly`](https://code.claude.com/docs/en/settings-reference#allowmanagedhooksonly))
+- **Running sessions:** Claude Code's file watcher picks up hook edits in settings files without a restart. Plugin hooks change with their plugin, after `/reload-plugins`.
+
+Not covered:
+- **Skill and subagent frontmatter hooks:** they only run while that skill or subagent is in use.
+- **Hooks passed with `--settings`.**
+- **Whether a hook's matcher fires for a given tool:** that depends on the session.
+
 ## Instructions (CLAUDE.md, rules, AGENTS.md)
 
 Source: [Memory](https://code.claude.com/docs/en/memory.md).

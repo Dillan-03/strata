@@ -2,10 +2,10 @@ import StrataCore
 import SwiftUI
 
 struct RepositoryDetailView: View {
-    // Narrower than this, the eight-segment category picker pushes itself and the toolbar's buttons into the » overflow menu.
+    // Narrower than this, the nine-segment category picker pushes itself and the toolbar's buttons into the » overflow menu.
     // ponytail: an estimate from the picker's width plus the sidebar, title and buttons. A long repository name can
     // still overflow just above it, and a hidden sidebar leaves room it doesn't use. Measure the toolbar if that matters.
-    static let segmentedPickerWindowWidth: CGFloat = 1200
+    static let segmentedPickerWindowWidth: CGFloat = 1240
 
     @Environment(AppModel.self) private var model
     let repository: Repository
@@ -51,7 +51,7 @@ struct RepositoryDetailView: View {
                     }
                 }
                 .labelsHidden()
-                .help("Category (⌘1 to ⌘8)")
+                .help("Category (⌘1 to ⌘9)")
                 .accessibilityIdentifier("categoryPicker")
             }
             ToolbarItem {

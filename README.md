@@ -56,6 +56,7 @@ Uninstalling never touches `~/.claude`, `~/.claude.json`, your repositories, or 
 | Subagents | `~/.claude/agents`, `.claude/agents`, managed and plugin agents |
 | MCP servers | `~/.claude.json` (user and per-project), `.mcp.json`, plugin `.mcp.json` and `plugin.json` |
 | Plugins | `enabledPlugins` in every settings file, `~/.claude/plugins/installed_plugins.json` |
+| Hooks | `hooks` in every settings file, and each enabled plugin's `hooks/hooks.json` and manifest |
 | Instructions | `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules`, `AGENTS.md`, parent folders, `@imports` |
 | Settings | Managed, `~/.claude/settings.json`, `.claude/settings.json`, `.claude/settings.local.json` |
 

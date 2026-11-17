@@ -8,6 +8,7 @@ enum Category: String, CaseIterable, Identifiable {
     case agents
     case mcp
     case plugins
+    case hooks
     case instructions
     case settings
     case issues
@@ -21,6 +22,7 @@ enum Category: String, CaseIterable, Identifiable {
         case .agents: "Agents"
         case .mcp: "MCP"
         case .plugins: "Plugins"
+        case .hooks: "Hooks"
         case .instructions: "Instructions"
         case .settings: "Settings"
         case .issues: "Issues"
@@ -35,12 +37,13 @@ enum Category: String, CaseIterable, Identifiable {
         case .agents: [.agent]
         case .mcp: [.mcpServer]
         case .plugins: [.plugin]
+        case .hooks: [.hook]
         case .instructions: [.instruction]
         case .settings: [.setting]
         }
     }
 
-    /// ⌘1 to ⌘8, in picker order.
+    /// ⌘1 to ⌘9, in picker order.
     var shortcut: KeyEquivalent {
         let index = Self.allCases.firstIndex(of: self) ?? 0
         return KeyEquivalent(Character(String(index + 1)))
