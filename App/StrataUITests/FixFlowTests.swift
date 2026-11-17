@@ -91,7 +91,7 @@ final class FixFlowTests: XCTestCase {
 
         let confirm = app.buttons["confirmFixButton"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10), "The uninstall review didn't open")
-        let takesOver = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'the repo copy runs instead'")).firstMatch
+        let takesOver = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "the repo copy runs instead", "the repo copy runs instead")).firstMatch
         XCTAssertTrue(takesOver.exists, "The review should say the repository copy takes over")
         XCTAssertTrue(FileManager.default.fileExists(atPath: personal.path), "Nothing changes before confirming")
         confirm.click()
