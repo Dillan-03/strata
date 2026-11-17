@@ -4,6 +4,7 @@
 Usage:
   scripts/next-version.py [--changelog PATH]              print the version the Unreleased entries call for
   scripts/next-version.py [--changelog PATH] --check X.Y.Z  fail unless X.Y.Z is the newest release and matches its entries
+  scripts/next-version.py [--changelog PATH] --against BASE  fail if this changelog adds entries to a release BASE already has
 
 Exits 1 on a changelog error, and 3 when Unreleased has nothing to release.
 
@@ -63,6 +64,10 @@ class Section:
     @property
     def has_entries(self) -> bool:
         return any(self.entries.values())
+
+    @property
+    def entry_lines(self) -> list[str]:
+        return [line for lines in self.entries.values() for line in lines]
 
     def bump_level(self) -> tuple[int, str] | None:
         """The bump these entries call for and the reason, or None when nothing would change."""
@@ -159,15 +164,40 @@ def check(sections: list[Section], version: str) -> str:
                          f"is a {LEVEL_NAMES[level]} bump, so this release should be {expected}.")
 
 
+def check_against(base: list[Section], head: list[Section]) -> str:
+    """Fails when a change adds entries to a release section the base already has.
+
+    New entries belong under Unreleased. A merge can still drop one into the release that just shipped without it, as
+    happened with #122. New sections are fine (a release PR creates one), and so is rewording an existing entry.
+    """
+    before = {section.name: section for section in base if section.version is not None}
+    for section in head:
+        previous = before.get(section.name)
+        if previous is None:
+            continue
+        added = len(section.entry_lines) - len(previous.entry_lines)
+        if added > 0:
+            new = [line.strip() for line in section.entry_lines if line not in previous.entry_lines]
+            example = f" The first new one starts '{new[0][:70]}'." if new else ""
+            raise ChangelogError(f"This change adds {added} {'entry' if added == 1 else 'entries'} to '## [{section.name}]', "
+                                 f"a release that already exists.{example} Move it under '## [Unreleased]'.")
+    return "New changelog entries are all under Unreleased."
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--changelog", default=str(Path(__file__).resolve().parent.parent / "CHANGELOG.md"))
     parser.add_argument("--check", metavar="VERSION", help="check a release version instead of printing the next one")
+    parser.add_argument("--against", metavar="BASE", help="fail if this changelog adds entries to a release BASE has")
     arguments = parser.parse_args()
     try:
         path = Path(arguments.changelog)
         sections = parse(path.read_text(encoding="utf-8"), path.name)
-        if arguments.check:
+        if arguments.against:
+            base = Path(arguments.against)
+            message = check_against(parse(base.read_text(encoding="utf-8"), base.name), sections)
+            print(f"::notice title=Changelog check::{message}")
+        elif arguments.check:
             print(f"::notice title=Version check::{check(sections, arguments.check)}")
         else:
             version, reason = next_version(sections)
@@ -177,7 +207,7 @@ def main() -> int:
         print(error, file=sys.stderr)
         return 3
     except (ChangelogError, OSError) as error:
-        print(f"::error title=Version check::{error}")
+        print(f"::error title={'Changelog check' if arguments.against else 'Version check'}::{error}")
         return 1
     return 0
 
