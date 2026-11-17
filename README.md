@@ -11,7 +11,7 @@ It's for questions like *"Why isn't my repo's `/deploy` skill running?"* (a pers
 
 When configuration changes on disk, from any editor or a `git checkout`, **Review Changes** shows what changed since you last looked. It shows each change as a diff with secrets masked. It also shows the repositories each change reaches, and whether a running Claude Code session picks it up. One click copies a prompt you can paste into that session so it knows what changed.
 
-Strata only reads Claude Code configuration unless you turn on **fixes** in Settings. With fixes on, it can remove an overridden skill, command or subagent, or replace it with the copy that runs. It always shows you exactly what will change first, keeps a backup, and lets you undo. It never runs MCP servers or makes network requests.
+Strata only reads Claude Code configuration unless you turn on **fixes** in Settings. With fixes on, it can remove an overridden skill, command or subagent, or replace it with the copy that runs. It always shows you exactly what will change first, keeps a backup, and lets you undo. It never runs MCP servers, and it makes no network requests unless you click **Check for Updates** in Settings.
 
 ![Strata's inspector for a /deploy skill: the global copy runs and the repository's copy is overridden](https://raw.githubusercontent.com/Dillan-03/strata/screenshots/inspector.png)
 
@@ -65,7 +65,8 @@ Every precedence rule Strata applies is written down, with a link to the Claude 
 
 ## Privacy
 
-- No accounts, analytics, telemetry or network requests.
+- No accounts, analytics or telemetry.
+- One network request, only when you click **Check for Updates** in Settings: a GET to GitHub's API for this repository's latest release, with no cookies or account details. GitHub sees your IP address, as it would for any web request. Strata never downloads or installs anything. Homebrew does the upgrade.
 - Read-only by default. Fixes are off until you turn them on, and then they only write after you approve each one. They write only to `~/.claude` and the inspected repository's `.claude` folder, never through a symbolic link, and every fix keeps a backup in `~/Library/Application Support/Strata/Backups`.
 - MCP server commands are displayed, never run. Remote servers are never contacted.
 - Values that look like credentials (API keys, tokens, passwords, `Authorization` headers, secret-looking environment variables) are masked before they reach the UI.
