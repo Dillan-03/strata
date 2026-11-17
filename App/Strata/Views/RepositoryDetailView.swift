@@ -25,6 +25,9 @@ struct RepositoryDetailView: View {
                     if model.category == .issues {
                         DiagnosticsListView(report: report, formatter: model.pathFormatter(for: repository))
                     } else {
+                        if !model.query.text.isEmpty, model.repositories.count > 1 {
+                            SearchScopeBar()
+                        }
                         if model.searchScope == .all, !model.query.text.isEmpty {
                             CrossRepositoryResultsView()
                         } else {
@@ -80,10 +83,6 @@ struct RepositoryDetailView: View {
             }
         }
         .searchable(text: $model.query.text, placement: .toolbar, prompt: model.searchScope == .all ? "Search All Repositories" : "Search")
-        .searchScopes($model.searchScope) {
-            Text("This Repository").tag(SearchScope.repository)
-            Text("All Repositories").tag(SearchScope.all)
-        }
         .onChange(of: model.searchScope) {
             if model.searchScope == .all { Task { await model.scanUnscannedRepositories() } }
         }

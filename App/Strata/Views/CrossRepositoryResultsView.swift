@@ -7,6 +7,28 @@ enum SearchScope: Hashable {
     case all
 }
 
+/// Chooses where the search box looks. Shown while there's search text and more than one repository. (SwiftUI's
+/// `searchScopes` doesn't reliably show its scope bar for a toolbar search field on macOS 15.)
+struct SearchScopeBar: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var model = model
+        Picker("Search", selection: $model.searchScope) {
+            Text("This Repository").tag(SearchScope.repository)
+            Text("All Repositories").tag(SearchScope.all)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .bottom) { Divider() }
+        .accessibilityIdentifier("searchScopePicker")
+    }
+}
+
 /// Search results from every added repository. Personal, managed and plugin items appear once, with their status in each.
 struct CrossRepositoryResultsView: View {
     @Environment(AppModel.self) private var model

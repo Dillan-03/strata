@@ -253,8 +253,10 @@ final class InspectionFlowTests: XCTestCase {
         XCTAssertTrue(search.waitForExistence(timeout: 5))
         search.click()
         search.typeText("lint")
-        let allScope = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "All Repositories")).firstMatch
-        XCTAssertTrue(allScope.waitForExistence(timeout: 5), "The search scope bar doesn't offer All Repositories")
+        let scope = app.descendants(matching: .any).matching(identifier: "searchScopePicker").firstMatch
+        XCTAssertTrue(scope.waitForExistence(timeout: 5), "No search scope picker appears while searching")
+        let allScope = scope.descendants(matching: .any).matching(NSPredicate(format: "label == %@ OR title == %@", "All Repositories", "All Repositories")).firstMatch
+        XCTAssertTrue(allScope.exists, "The scope picker doesn't offer All Repositories:\n\(scope.debugDescription)")
         allScope.click()
 
         let result = app.descendants(matching: .any).matching(identifier: "searchResult.skill.project.lint").firstMatch
