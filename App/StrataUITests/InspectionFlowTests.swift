@@ -66,4 +66,47 @@ final class InspectionFlowTests: XCTestCase {
         let skillsSection = app.staticTexts["Skills (2)"]
         XCTAssertTrue(skillsSection.waitForExistence(timeout: 10))
     }
+
+    func testFilterChipFiltersTheListAndTicksTheMenu() throws {
+        let fixture = try makeFixture()
+        let app = XCUIApplication()
+        app.launchArguments = ["-StrataUITesting"]
+        app.launchEnvironment = [
+            "STRATA_UITEST_REPOSITORY": fixture.repository.path,
+            "STRATA_UITEST_HOME": fixture.home.path,
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["issuesSummary"].waitForExistence(timeout: 20))
+        app.typeKey("2", modifierFlags: .command)
+        XCTAssertTrue(app.staticTexts["Skills (2)"].waitForExistence(timeout: 10))
+
+        let overridden = app.descendants(matching: .any).matching(identifier: "filterChip.status.overridden").firstMatch
+        XCTAssertTrue(overridden.waitForExistence(timeout: 5))
+        overridden.click()
+        XCTAssertTrue(app.staticTexts["Skills (1)"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "filterChip.clear").firstMatch.exists)
+
+        // XCUITest can't read a menu item's tick, so prove it's shared: choosing Overridden in the menu turns it off.
+        let filterMenu = app.descendants(matching: .any).matching(identifier: "filterMenu").firstMatch
+        if filterMenu.exists {
+            filterMenu.click()
+        } else {
+            // CI's screen is narrow enough that the toolbar moves Filter into its overflow menu, as a submenu.
+            let toolbar = app.toolbars.firstMatch
+            let overflow = toolbar.descendants(matching: .any).matching(
+                NSPredicate(format: "identifier CONTAINS[c] 'clipped' OR identifier CONTAINS[c] 'overflow' OR label CONTAINS[c] 'more'")
+            ).firstMatch
+            XCTAssertTrue(overflow.exists, "No Filter menu or overflow button in the toolbar:\n\(toolbar.debugDescription)")
+            overflow.click()
+            let filterItem = app.menuItems["Filter"]
+            XCTAssertTrue(filterItem.waitForExistence(timeout: 5), "No Filter in the overflow menu:\n\(app.menus.firstMatch.debugDescription)")
+            filterItem.hover()
+        }
+        let menuItem = app.menuItems["Overridden"]
+        XCTAssertTrue(menuItem.waitForExistence(timeout: 5))
+        menuItem.click()
+        XCTAssertTrue(app.staticTexts["Skills (2)"].waitForExistence(timeout: 5), "Expected the menu to show Overridden ticked and turn it off")
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "filterChip.clear").firstMatch.exists)
+    }
 }

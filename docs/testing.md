@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `StrataCoreTests` | Linux and macOS | Every scanner and precedence rule, against fixture folders built in a temporary directory. Includes the secret-masking guarantee (no planted credential appears anywhere in an encoded report), import cycles, malformed JSON and frontmatter, files that are too large, not UTF-8 or unreadable, symlink loops, `CLAUDE_CONFIG_DIR`, and a 5,000-item filtering speed check. |
 | `StrataTests` | macOS | `AppModel`: repository persistence, moved and missing folders, scanning, filtering, and refresh batching. |
-| `StrataUITests` | macOS | End-to-end flows: launch, empty state, following an issue to the overridden item, category switching. |
+| `StrataUITests` | macOS | End-to-end flows: launch, empty state, following an issue to the overridden item, category switching, filter chips sharing state with the Filter menu. |
 | `issue-title.test.mjs` | Node | The workflow that checks issue title prefixes. |
 
 ## Measured results

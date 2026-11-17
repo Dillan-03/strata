@@ -81,10 +81,16 @@ final class AppModel {
         scanningRepositoryIDs.contains(id)
     }
 
+    /// Items for the current category, before search and filters, in report order.
+    var categoryItems: [ConfigItem] {
+        guard category != .issues, let report = selectedReport else { return [] }
+        return report.items.filter { category.includes($0.kind) }
+    }
+
     /// Items for the current category that match the search and filters, in report order.
     var visibleItems: [ConfigItem] {
-        guard category != .issues, let report = selectedReport else { return [] }
-        return query.apply(to: report.items.filter { category.includes($0.kind) }, in: report)
+        guard let report = selectedReport else { return [] }
+        return query.apply(to: categoryItems, in: report)
     }
 
     /// Diagnostics matching the search text.

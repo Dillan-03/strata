@@ -63,12 +63,47 @@ public struct ItemQuery: Equatable, Sendable {
         onlyWithIssues = false
     }
 
+    /// Whether a scope is picked. Lets a toggle bind to one scope.
+    public subscript(scope scope: Scope) -> Bool {
+        get { scopes.contains(scope) }
+        set { if newValue { scopes.insert(scope) } else { scopes.remove(scope) } }
+    }
+
+    /// Whether a status is picked. Lets a toggle bind to one status.
+    public subscript(status status: Status) -> Bool {
+        get { statuses.contains(status) }
+        set { if newValue { statuses.insert(status) } else { statuses.remove(status) } }
+    }
+
+    /// How many items each filter would show if it were the only one picked in its group, keeping the search and every other group.
+    public struct Counts: Equatable, Sendable {
+        public var scopes: [Scope: Int] = [:]
+        public var statuses: [Status: Int] = [:]
+        public var withIssues = 0
+    }
+
+    /// Counts for every filter in one pass, so it stays as fast as `apply` while typing.
+    public func counts(in items: [ConfigItem], report: InspectionReport) -> Counts {
+        let flagged = Self.flaggedIDs(in: report)
+        let words = tokens
+        var counts = Counts()
+        for item in items where words.isEmpty || Self.matches(words, in: Self.searchableText(of: item)) {
+            let status = Status(item.applicability)
+            let inScope = scopes.isEmpty || scopes.contains(item.scope)
+            let inStatus = statuses.isEmpty || statuses.contains(status)
+            let hasIssues = flagged.contains(item.id)
+            let passesIssues = !onlyWithIssues || hasIssues
+            if inStatus, passesIssues { counts.scopes[item.scope, default: 0] += 1 }
+            if inScope, passesIssues { counts.statuses[status, default: 0] += 1 }
+            if inScope, inStatus, hasIssues { counts.withIssues += 1 }
+        }
+        return counts
+    }
+
     /// Items in the report that pass every filter and contain every search word.
     public func apply(to items: [ConfigItem], in report: InspectionReport) -> [ConfigItem] {
         guard !isEmpty else { return items }
-        let flagged = onlyWithIssues
-            ? Set(report.diagnostics.filter { $0.severity != .info }.flatMap(\.itemIDs))
-            : []
+        let flagged = onlyWithIssues ? Self.flaggedIDs(in: report) : []
         let words = tokens
         return items.filter { item in
             if !scopes.isEmpty, !scopes.contains(item.scope) { return false }
@@ -86,6 +121,10 @@ public struct ItemQuery: Equatable, Sendable {
             let text = ([diagnostic.title, diagnostic.detail, diagnostic.suggestion ?? ""] + diagnostic.paths).joined(separator: "\n")
             return Self.matches(words, in: Self.fold(text))
         }
+    }
+
+    private static func flaggedIDs(in report: InspectionReport) -> Set<ConfigItem.ID> {
+        Set(report.diagnostics.filter { $0.severity != .info }.flatMap(\.itemIDs))
     }
 
     private var tokens: [String] {
