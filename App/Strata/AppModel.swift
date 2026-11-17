@@ -410,6 +410,13 @@ final class AppModel {
 
     // MARK: - Adding and removing
 
+    /// Folders Claude Code has been used in that aren't added yet, from `~/.claude.json`.
+    var suggestedRepositories: [URL] {
+        ClaudeProjects.folders(environment: environment).filter { url in
+            !repositories.contains { $0.refersToSameFolder(as: url) }
+        }
+    }
+
     func add(_ url: URL) {
         if let existing = repositories.first(where: { $0.refersToSameFolder(as: url) }) {
             selectedRepositoryID = existing.id

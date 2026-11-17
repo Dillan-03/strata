@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- On first launch, Strata suggests the folders Claude Code has been used in, from its project list in `~/.claude.json`, so you can add them with one click.
+
 ## [0.3.0] - 2026-11-17
 
 ### Added
