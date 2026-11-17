@@ -25,8 +25,12 @@ struct RepositoryDetailView: View {
                     if model.category == .issues {
                         DiagnosticsListView(report: report, formatter: model.pathFormatter(for: repository))
                     } else {
-                        FilterChips(items: model.categoryItems, report: report)
-                        ItemListView(report: report, formatter: model.pathFormatter(for: repository))
+                        if model.searchScope == .all, !model.query.text.isEmpty {
+                            CrossRepositoryResultsView()
+                        } else {
+                            FilterChips(items: model.categoryItems, report: report)
+                            ItemListView(report: report, formatter: model.pathFormatter(for: repository))
+                        }
                     }
                 }
             } else {
@@ -75,7 +79,14 @@ struct RepositoryDetailView: View {
                 .help(model.isInspectorPresented ? "Hide Inspector" : "Show Inspector")
             }
         }
-        .searchable(text: $model.query.text, placement: .toolbar, prompt: "Search")
+        .searchable(text: $model.query.text, placement: .toolbar, prompt: model.searchScope == .all ? "Search All Repositories" : "Search")
+        .searchScopes($model.searchScope) {
+            Text("This Repository").tag(SearchScope.repository)
+            Text("All Repositories").tag(SearchScope.all)
+        }
+        .onChange(of: model.searchScope) {
+            if model.searchScope == .all { Task { await model.scanUnscannedRepositories() } }
+        }
         .inspector(isPresented: $model.isInspectorPresented) {
             ItemInspectorView(repository: repository)
                 .inspectorColumnWidth(min: 280, ideal: 340, max: 520)

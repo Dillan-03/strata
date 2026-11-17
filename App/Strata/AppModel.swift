@@ -14,6 +14,7 @@ final class AppModel {
     var isReviewingChanges = false
     var isCheckingPluginUpdates = false
     var isExportingReport = false
+    var searchScope: SearchScope = .repository
     /// The change Review Changes opens on, when it's opened from one item.
     var reviewSelection: PendingChange.ID?
     /// A fix waiting for approval on the fix review screen.

@@ -12,20 +12,21 @@ struct LaunchConfiguration {
     /// True when the app is only hosting unit tests, which must not touch macOS notifications.
     var isHostingUnitTests: Bool { ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil }
     let defaults: UserDefaults
-    let initialRepository: URL?
+    /// UI tests can pass several, separated by `:`.
+    let initialRepositories: [URL]
     let homeOverride: URL?
 
     static func current(processInfo: ProcessInfo = .processInfo) -> LaunchConfiguration {
         let isUITesting = processInfo.arguments.contains(uiTestingArgument)
         guard isUITesting, let suite = UserDefaults(suiteName: uiTestingSuite) else {
-            return LaunchConfiguration(isUITesting: false, defaults: .standard, initialRepository: nil, homeOverride: nil)
+            return LaunchConfiguration(isUITesting: false, defaults: .standard, initialRepositories: [], homeOverride: nil)
         }
         suite.removePersistentDomain(forName: uiTestingSuite)
         let environment = processInfo.environment
         return LaunchConfiguration(
             isUITesting: true,
             defaults: suite,
-            initialRepository: environment[repositoryEnvironmentKey].map { URL(fileURLWithPath: $0, isDirectory: true) },
+            initialRepositories: (environment[repositoryEnvironmentKey] ?? "").split(separator: ":").map { URL(fileURLWithPath: String($0), isDirectory: true) },
             homeOverride: environment[homeEnvironmentKey].map { URL(fileURLWithPath: $0, isDirectory: true) }
         )
     }
