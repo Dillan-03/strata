@@ -4,6 +4,8 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-18
+
 ### Fixed
 
 - The issue count next to each repository in the sidebar now follows the scope and status filters, so it matches the list. Issues that aren't about a single item, such as a broken settings file, always count.
@@ -126,6 +128,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
+[0.7.1]: https://github.com/Dillan-03/strata/releases/tag/v0.7.1
 [0.7.0]: https://github.com/Dillan-03/strata/releases/tag/v0.7.0
 [0.6.0]: https://github.com/Dillan-03/strata/releases/tag/v0.6.0
 [0.5.0]: https://github.com/Dillan-03/strata/releases/tag/v0.5.0
