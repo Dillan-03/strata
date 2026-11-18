@@ -12,6 +12,8 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [0.6.0] - 2026-11-17
 
+Never published: its build was cancelled while waiting for a macOS runner. Everything below shipped in [0.7.0].
+
 ### Added
 
 - **Check for updates automatically** in Settings → About, off by default. When it's on, Strata asks GitHub for the latest release when it opens, at most once a day, and shows a notice at the bottom of the sidebar when there's a new version. Homebrew still does the upgrade; Strata never downloads anything.
@@ -123,7 +125,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Requires macOS 15 Sequoia or later.
 
 [0.7.0]: https://github.com/Dillan-03/strata/releases/tag/v0.7.0
-[0.6.0]: https://github.com/Dillan-03/strata/releases/tag/v0.6.0
+[0.6.0]: https://github.com/Dillan-03/strata/commit/8c3b663a96333fb4928d12b04ae946f015a6604f
 [0.5.0]: https://github.com/Dillan-03/strata/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Dillan-03/strata/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Dillan-03/strata/releases/tag/v0.3.0
