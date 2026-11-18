@@ -123,6 +123,15 @@ public struct ItemQuery: Equatable, Sendable {
         }
     }
 
+    /// Warnings and errors about items the scope and status filters let through, ignoring the search text.
+    /// An issue that names no item always counts, because there's no scope or status to filter it by.
+    public func issues(in report: InspectionReport) -> [Diagnostic] {
+        let issues = report.diagnostics.filter { $0.severity != .info }
+        guard !scopes.isEmpty || !statuses.isEmpty else { return issues }
+        let shown = Set(ItemQuery(scopes: scopes, statuses: statuses).apply(to: report.items, in: report).map(\.id))
+        return issues.filter { $0.itemIDs.isEmpty || $0.itemIDs.contains(where: shown.contains) }
+    }
+
     private static func flaggedIDs(in report: InspectionReport) -> Set<ConfigItem.ID> {
         Set(report.diagnostics.filter { $0.severity != .info }.flatMap(\.itemIDs))
     }

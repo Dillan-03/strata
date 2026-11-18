@@ -77,7 +77,7 @@ struct SidebarView: View {
                     RepositoryRow(
                         repository: repository,
                         isMissing: model.isMissing(repository.id),
-                        issueCount: model.reports[repository.id]?.diagnostics.filter { $0.severity != .info }.count ?? 0
+                        issueCount: model.reports[repository.id].map { model.query.issues(in: $0).count } ?? 0
                     )
                     .tag(repository.id)
                     .contextMenu {
