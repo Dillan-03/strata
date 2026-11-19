@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- **Appearance** at the top of Settings: System, Light or Dark for Strata, whatever macOS is set to. It changes every window, sheet and menu at once. System is the default and follows macOS, including when it switches automatically during the day.
+
 ## [0.7.1] - 2026-11-18
 
 ### Fixed

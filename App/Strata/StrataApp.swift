@@ -1,3 +1,4 @@
+import AppKit
 import StrataCore
 import SwiftUI
 
@@ -8,6 +9,7 @@ struct StrataApp: App {
     private let notifications: SystemNotifications?
     /// Settings read with @AppStorage come from here too, so UI tests keep theirs in a throwaway domain.
     private let defaults: UserDefaults
+    @AppStorage private var appearance: Appearance
 
     init() {
         let launch = LaunchConfiguration.current()
@@ -18,6 +20,7 @@ struct StrataApp: App {
             environment = .current()
         }
         defaults = launch.defaults
+        _appearance = AppStorage(wrappedValue: .system, PreferenceKey.appearance, store: launch.defaults)
         let model = AppModel(store: RepositoryStore(defaults: launch.defaults), environment: environment)
         launch.initialRepositories.forEach(model.add)
         model.selectedRepositoryID = model.repositories.first?.id
@@ -79,6 +82,11 @@ struct StrataApp: App {
                         .keyboardShortcut(category.shortcut, modifiers: .command)
                 }
             }
+        }
+        // The app-wide appearance, unlike preferredColorScheme, reaches Settings, sheets, menus and panels too, and nil
+        // reliably goes back to following macOS without a relaunch.
+        .onChange(of: appearance, initial: true) { _, appearance in
+            NSApplication.shared.appearance = appearance.appearanceName.flatMap(NSAppearance.init(named:))
         }
 
         Settings {
