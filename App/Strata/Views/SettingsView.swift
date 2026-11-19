@@ -9,6 +9,33 @@ enum PreferenceKey {
     /// Off by default: Strata makes no network request unless this is on or the user clicks Check for Updates.
     static let checksForUpdatesAutomatically = "checksForUpdatesAutomatically"
     static let lastAutomaticUpdateCheck = "lastAutomaticUpdateCheck"
+    static let appearance = "appearance"
+}
+
+/// Strata's own light or dark look, whatever macOS is set to.
+enum Appearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    /// `nil` follows macOS, including when it switches automatically during the day.
+    var appearanceName: NSAppearance.Name? {
+        switch self {
+        case .system: nil
+        case .light: .aqua
+        case .dark: .darkAqua
+        }
+    }
 }
 
 struct SettingsView: View {
@@ -20,9 +47,17 @@ struct SettingsView: View {
     @AppStorage(NotificationPreferences.enabledKey) private var notifyAboutChanges = false
     @AppStorage(NotificationPreferences.pausedUntilKey) private var pausedUntil: Double = 0
     @State private var authorization: UNAuthorizationStatus?
+    @AppStorage(PreferenceKey.appearance) private var appearance = Appearance.system
 
     var body: some View {
         Form {
+            Section {
+                Picker("Appearance", selection: $appearance) {
+                    ForEach(Appearance.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("appearancePicker")
+            }
             Section {
                 Toggle("Refresh automatically when configuration files change", isOn: $autoRefresh)
                 Text(
