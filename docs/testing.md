@@ -49,8 +49,11 @@ Tests build their fixtures in code with the helpers in `Tests/StrataCoreTests/Su
 
 - **Lint:** actionlint, shellcheck, SwiftLint `--strict`, the issue-title tests and the version script tests. Its **Release check** says what merging does: updates the release PR to the version the Unreleased entries call for, releases, or nothing. It counts as releasing only when the change itself sets a new `MARKETING_VERSION`, as the release PR does, and then also runs `scripts/next-version.py --check`. Its **Changelog check** fails a pull request that adds entries to a release section that already exists (`next-version.py --against`), so a merge can't drop a new line into a version that shipped without it. A changelog the script can't read fails both checks before it merges.
 - **Core (Linux):** checks StrataCore has no package dependencies, builds with warnings as errors, and runs the core tests.
-- **Changes:** decides whether the macOS app tests are needed. A pull request runs them only if it changes `App/`, `Packages/`, `ci.yml` or `.github/scripts/xcresult-report.py`. Every other run tests the app. An annotation says which, and why.
-- **App (macOS):** runs the core tests on macOS, then generates the project and runs the app and UI tests, then `xcodebuild analyze`. When Changes skips it, it shows as skipped, which still counts as passing for a required check.
+- **Changes:** decides whether the macOS app tests are needed. An annotation says which, and why.
+  - A pull request runs them only if it changes `App/`, `Packages/`, `ci.yml` or `.github/scripts/xcresult-report.py`.
+  - A push to `main` skips them. The ruleset only merges pull requests that are up to date with `main`, so the pull request's run already tested the same files. This relies on admin merges being up to date too: don't bypass a pull request that's behind `main`.
+  - The run Release calls, and manual runs, test the app.
+- **App (macOS):** runs the core tests on macOS, then generates the project and runs the app and UI tests. When Changes skips it, it shows as skipped, which still counts as passing for a required check. There's no `xcodebuild analyze` step: the Clang static analyzer doesn't check Swift, and the project has no C or Objective-C.
   - Test counts are posted as check annotations, along with the name of every failing test.
   - The `.xcresult` bundle is uploaded as an artifact.
 - **Dependency review:** runs once the dependency graph is enabled (see #21).
