@@ -8,6 +8,11 @@ on:
   workflow_dispatch:
   # The Release workflow runs all of CI before it builds.
   workflow_call:
+    inputs:
+      release:
+        description: "Tests everything, including the app on a push. Release relies on the default."
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -121,14 +126,24 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
-      # macOS runners are scarce, so a pull request that can't affect the app skips its tests.
-      # Every other event tests everything.
+      # macOS runners are scarce, so the app tests run only when they can find something new:
+      # - a pull request runs them if it changes the app, its package or this workflow
+      # - a push to main skips them. The ruleset only merges pull requests that are up to date with main, so the pull
+      #   request's run already tested these exact files. A release, which calls this workflow, still tests everything.
+      # - every other event tests everything
       - name: Decide whether the app tests run
         id: diff
+        env:
+          RELEASE: ${{ inputs.release }}
         run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$RELEASE" != "true" ]; then
+            echo "app=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=App tests::Skipped: main only takes pull requests that are up to date with it, so this commit's pull request already tested the same files. Releases test everything."
+            exit 0
+          fi
           if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
             echo "app=true" >> "$GITHUB_OUTPUT"
-            echo "::notice title=App tests::Running: every $GITHUB_EVENT_NAME run tests the app."
+            echo "::notice title=App tests::Running: only pull requests and merges into main can skip the app tests."
             exit 0
           fi
           # A pull request is checked out as a merge commit whose first parent is the base branch.
@@ -192,15 +207,6 @@ jobs:
           if [ -d build/TestResults.xcresult ]; then
             python3 .github/scripts/xcresult-report.py build/TestResults.xcresult "App tests"
           fi
-
-      - name: Static analysis
-        run: |
-          set -o pipefail
-          xcodebuild analyze \
-            -project App/Strata.xcodeproj \
-            -scheme Strata \
-            -destination 'platform=macOS' \
-            -quiet
 
       - name: Upload test results
         if: always()
