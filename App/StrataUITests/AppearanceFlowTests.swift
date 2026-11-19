@@ -35,9 +35,11 @@ final class AppearanceFlowTests: XCTestCase {
 
         segment("Dark", in: app).click()
         XCTAssertTrue(waitUntil { isDark(main) && isDark(settings) }, "Picking Dark didn't darken both windows")
+        keep(settings, named: "Settings, Dark")
 
         segment("Light", in: app).click()
         XCTAssertTrue(waitUntil { !isDark(main) && !isDark(settings) }, "Picking Light didn't lighten both windows")
+        keep(settings, named: "Settings, Light")
 
         segment("System", in: app).click()
         XCTAssertTrue(waitUntil { isDark(main) == systemIsDark }, "Picking System didn't go back to the macOS appearance")
@@ -50,6 +52,14 @@ final class AppearanceFlowTests: XCTestCase {
     private func segment(_ title: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: "appearancePicker").firstMatch
             .descendants(matching: .any).matching(NSPredicate(format: "label == %@", title)).firstMatch
+    }
+
+    /// Saved in the result bundle, so a reviewer can see both looks without running the app.
+    private func keep(_ window: XCUIElement, named name: String) {
+        let attachment = XCTAttachment(screenshot: window.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func waitUntil(timeout: TimeInterval = 5, _ condition: () -> Bool) -> Bool {
