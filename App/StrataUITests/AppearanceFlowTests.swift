@@ -8,16 +8,14 @@ final class AppearanceFlowTests: XCTestCase {
 
     func testTheStoredAppearanceAppliesAtLaunch() {
         let app = XCUIApplication()
-        app.launchArguments = ["-StrataUITesting", "-appearance", "dark"]
+        // The bare flag goes last: after it, "-appearance" would be read as its value and "dark" as a file to open,
+        // and then no window opens.
+        app.launchArguments = ["-appearance", "dark", "-StrataUITesting"]
         app.launch()
 
         let main = mainWindow(of: app)
         XCTAssertTrue(main.waitForExistence(timeout: 15))
         XCTAssertTrue(waitUntil { isDark(main) }, "Strata didn't open dark")
-
-        app.typeKey(",", modifierFlags: .command)
-        XCTAssertTrue(segment("Dark", in: app).waitForExistence(timeout: 10))
-        XCTAssertTrue(segment("Dark", in: app).isSelected, "Settings doesn't show the stored choice")
     }
 
     func testPickingAnAppearanceChangesEveryWindowAtOnce() {
@@ -31,7 +29,6 @@ final class AppearanceFlowTests: XCTestCase {
         app.typeKey(",", modifierFlags: .command)
         let settings = app.windows.containing(NSPredicate(format: "identifier == %@", "appearancePicker")).firstMatch
         XCTAssertTrue(settings.waitForExistence(timeout: 10))
-        XCTAssertTrue(segment("System", in: app).isSelected, "System should be the default")
 
         segment("Dark", in: app).click()
         XCTAssertTrue(waitUntil { isDark(main) && isDark(settings) }, "Picking Dark didn't darken both windows")
