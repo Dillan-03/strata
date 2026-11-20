@@ -140,8 +140,9 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
-        .fixedSize(horizontal: false, vertical: true)
+        // The sections add up to about 1,000 points, taller than a 13-inch MacBook Air's screen, so the form scrolls.
+        // 600 fits under the menu bar and Dock on a 768-point screen. The Settings window ignores an ideal height.
+        .frame(width: 460, height: 600)
         .task {
             authorization = await notifications?.authorizationStatus()
             model.reloadFixRecords()
