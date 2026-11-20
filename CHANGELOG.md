@@ -7,6 +7,7 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 ### Fixed
 
 - Settings fits on smaller screens, such as a 13-inch MacBook Air's. It opens 600 points tall and scrolls, where it used to run off the bottom of the screen and cut off About and Privacy.
+- In a narrow window, the category pop-up no longer covers the Filter button. It now sits in line with the toolbar's buttons instead of in the middle of the toolbar.
 
 ## [0.8.0] - 2026-11-19
 
