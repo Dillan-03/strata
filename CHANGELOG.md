@@ -4,6 +4,8 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-19
+
 ### Added
 
 - **Appearance** at the top of Settings: System, Light or Dark for Strata, whatever macOS is set to. It changes every window, sheet and menu at once. System is the default and follows macOS, including when it switches automatically during the day.
@@ -132,6 +134,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
+[0.8.0]: https://github.com/Dillan-03/strata/releases/tag/v0.8.0
 [0.7.1]: https://github.com/Dillan-03/strata/releases/tag/v0.7.1
 [0.7.0]: https://github.com/Dillan-03/strata/releases/tag/v0.7.0
 [0.6.0]: https://github.com/Dillan-03/strata/releases/tag/v0.6.0
