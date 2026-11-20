@@ -4,6 +4,8 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-20
+
 ### Fixed
 
 - Settings fits on smaller screens, such as a 13-inch MacBook Air's. It opens 600 points tall and scrolls, where it used to run off the bottom of the screen and cut off About and Privacy.
@@ -139,6 +141,7 @@ First release. Unsigned: builds are ad-hoc signed and not notarised until Develo
 - Command-line flags, server-managed settings, MDM profiles and claude.ai connectors aren't visible.
 - Requires macOS 15 Sequoia or later.
 
+[0.8.1]: https://github.com/Dillan-03/strata/releases/tag/v0.8.1
 [0.8.0]: https://github.com/Dillan-03/strata/releases/tag/v0.8.0
 [0.7.1]: https://github.com/Dillan-03/strata/releases/tag/v0.7.1
 [0.7.0]: https://github.com/Dillan-03/strata/releases/tag/v0.7.0
