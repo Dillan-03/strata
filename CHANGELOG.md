@@ -4,6 +4,10 @@ All notable changes to Strata are recorded here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Fixed
+
+- Settings fits on smaller screens, such as a 13-inch MacBook Air's. It opens 600 points tall and scrolls, where it used to run off the bottom of the screen and cut off About and Privacy. You can make it taller.
+
 ## [0.8.0] - 2026-11-19
 
 ### Added
