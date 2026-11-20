@@ -58,7 +58,7 @@ jobs:
           git push -q --force origin "$BRANCH"
 
           title="[Chore] Release $version"
-          body="Merging this releases **$version**. The Release workflow then tags \`v$version\`, builds, signs, notarises and publishes it, and opens the Homebrew cask PR.
+          body="Merging this releases **$version**. The Release workflow then tags \`v$version\`, builds, signs, notarises and publishes it, and updates the Homebrew cask on \`main\`.
 
           GitHub holds CI on PRs opened by the workflow token, so click **Approve workflows to run** on this PR, then merge once it's green.
 

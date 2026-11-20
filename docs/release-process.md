@@ -40,10 +40,9 @@ Nobody edits `MARKETING_VERSION`, moves changelog entries or pushes tags. Mergin
    - **verify** (macOS 15 and macOS 26, read-only token): on each OS, checks the checksum and `codesign --verify --strict` (plus `spctl` for signed builds), launches the app, and runs the Homebrew round trip
    - **publish** (Linux, write token):
      - creates the GitHub Release and its `v<version>` tag on the merged commit. It's a pre-release when unsigned.
-     - opens a `[Chore] Update Homebrew cask to <version>` PR
+     - commits `[Chore] Update Homebrew cask to <version>` straight to `main`, so Homebrew users get the release on their next `brew update`. See [Homebrew cask](#homebrew-cask).
      - starts the Screenshots workflow on the new tag, which refreshes the README screenshots
-3. On the cask PR, click **Approve workflows to run**, then approve and merge it once it's green. Homebrew users don't see the release until you do.
-4. Check the release:
+3. Check the release:
 
    ```bash
    brew update && brew upgrade --cask strata-inspector
@@ -75,6 +74,26 @@ If any are missing it ad-hoc signs, emits a workflow warning, and records `unsig
 
 Setup steps are in [#22](https://github.com/Dillan-03/strata/issues/22). To confirm the secrets work, run a dry run and check that the Sign and notarise step logs `Signed, notarised and stapled.`.
 
+## Homebrew cask
+
+The tap is this repository, so the cask has to change on `main`. The `main` ruleset needs a pull request with passing checks, and the workflow token can't bypass that. Instead, Publish pushes the cask commit with a deploy key:
+
+- **Deploy key** "Release: Homebrew cask", with write access. Its private half is the `CASK_DEPLOY_KEY` repository secret.
+- **Ruleset:** "Deploy keys" is on the `main branch` ruleset's bypass list, next to the repository owner. That key is the only deploy key.
+
+Publish commits only `Casks/strata-inspector.rb`, rendered from the template that Verify just installed and zapped. If `main` moved since it fetched, it rebases and retries. GitHub's SSH host keys come from `api.github.com/meta`. The push to `main` starts the usual push workflows, and each finds nothing to do.
+
+If the secret is missing or the push still fails, Publish opens a `[Chore] Update Homebrew cask to <version>` PR instead, with a warning on the run. The release itself is already out. Click **Approve workflows to run** on that PR, then merge it once it's green.
+
+To rotate the key, delete it under **Settings → Deploy keys**, then add a new one with write access and put its private half in `CASK_DEPLOY_KEY`:
+
+```bash
+ssh-keygen -t ed25519 -N "" -C strata-release-cask -f cask-key
+gh repo deploy-key add cask-key.pub --allow-write --title "Release: Homebrew cask"
+gh secret set CASK_DEPLOY_KEY < cask-key
+rm cask-key cask-key.pub
+```
+
 ## Scripts
 
 | Script | Purpose |
@@ -89,4 +108,4 @@ Setup steps are in [#22](https://github.com/Dillan-03/strata/issues/22). To conf
 
 ## Rolling back
 
-Delete the GitHub Release, revert the cask PR, then merge the fix with a `### Fixed` entry and merge the release PR it produces. Never re-tag an existing version. Homebrew users may have already installed it, and the checksum in their cask would stop matching.
+Delete the GitHub Release, revert the cask commit, then merge the fix with a `### Fixed` entry and merge the release PR it produces. Never re-tag an existing version. Homebrew users may have already installed it, and the checksum in their cask would stop matching.

@@ -274,22 +274,48 @@ jobs:
           gh release create "v$VERSION" "dist/Strata-$VERSION.zip" "dist/Strata-$VERSION.zip.sha256" \
             --title "Strata $VERSION" --notes-file "$RUNNER_TEMP/notes.md" --generate-notes --target "$GITHUB_SHA" "${prerelease[@]}"
 
-      - name: Open cask update pull request
+      # main's ruleset needs a pull request, which the workflow token can't bypass. The deploy key in CASK_DEPLOY_KEY is on
+      # the ruleset's bypass list, so the cask goes straight to main. The template it renders is the one Verify just
+      # installed and zapped. Without the key, or if the push fails, it opens a pull request instead.
+      - name: Update the Homebrew cask
         env:
           GH_TOKEN: ${{ github.token }}
+          CASK_DEPLOY_KEY: ${{ secrets.CASK_DEPLOY_KEY }}
         run: |
           sha=$(awk '{print $1}' "dist/Strata-$VERSION.zip.sha256")
-          branch="chore/cask-v$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git fetch origin main
-          git switch -c "$branch" origin/main
+          git fetch -q origin main
+          git switch -q -c cask origin/main
           mkdir -p Casks
           scripts/render-cask.sh "$VERSION" "$sha" > Casks/strata-inspector.rb
           git add Casks/strata-inspector.rb
-          git commit -m "[Chore] Update Homebrew cask to $VERSION"
-          git push origin "$branch"
+          git commit -q -m "[Chore] Update Homebrew cask to $VERSION"
+
+          if [ -n "$CASK_DEPLOY_KEY" ]; then
+            key="$RUNNER_TEMP/cask-key"
+            trap 'rm -f "$key"' EXIT
+            (umask 077 && printf '%s\n' "$CASK_DEPLOY_KEY" > "$key")
+            # GitHub's host keys over HTTPS, rather than trusting whichever key answers first.
+            curl -fsSL https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com " + .' > "$RUNNER_TEMP/known_hosts"
+            export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o UserKnownHostsFile=$RUNNER_TEMP/known_hosts -o StrictHostKeyChecking=yes"
+            for _ in 1 2 3; do
+              if git push -q "git@github.com:$GITHUB_REPOSITORY.git" HEAD:main; then
+                echo "::notice title=Cask::Pushed to main. Homebrew users get $VERSION on their next brew update."
+                exit 0
+              fi
+              # main moved since the fetch, so replay the cask commit on top of it and try again.
+              git fetch -q origin main
+              git rebase -q origin/main || { git rebase --abort; break; }
+            done
+            echo "::warning title=Cask not pushed::Couldn't push the cask to main, so opening a pull request instead."
+          else
+            echo "::warning title=Cask not pushed::CASK_DEPLOY_KEY isn't set, so opening a pull request instead."
+          fi
+
+          branch="chore/cask-v$VERSION"
+          git push -q origin "HEAD:refs/heads/$branch"
           body="Points \`Casks/strata-inspector.rb\` at the v$VERSION release (SHA-256 \`$sha\`). Opened by the Release workflow. GitHub holds CI on PRs opened by the workflow token, so click **Approve workflows to run** on this PR, then merge once it's green so Homebrew users get v$VERSION."
           # The release is already published, so a PR that can't be opened is a warning with a manual next step, not a failure.
           if ! gh pr create --base main --head "$branch" --title "[Chore] Update Homebrew cask to $VERSION" --body "$body"; then
