@@ -44,22 +44,12 @@ struct RepositoryDetailView: View {
         .navigationTitle(repository.displayName)
         .navigationSubtitle(model.pathFormatter(for: repository).abbreviatingHome(repository.url.standardizedFileURL.path))
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                let picker = Picker("Category", selection: $model.category) {
-                    ForEach(Category.allCases) { category in
-                        Text(category.title).tag(category)
-                    }
-                }
-                Group {
-                    if compactToolbar {
-                        picker.pickerStyle(.menu).fixedSize()
-                    } else {
-                        picker.pickerStyle(.segmented)
-                    }
-                }
-                .labelsHidden()
-                .help("Category (⌘1 to ⌘9)")
-                .accessibilityIdentifier("categoryPicker")
+            // The principal item stays centred while the buttons slide left as the window narrows, so in a narrow window
+            // the pop-up would cover Filter. It goes in line with the buttons instead.
+            if compactToolbar {
+                ToolbarItem { categoryPicker(compact: true) }
+            } else {
+                ToolbarItem(placement: .principal) { categoryPicker(compact: false) }
             }
             ToolbarItem {
                 FilterMenu()
@@ -95,6 +85,25 @@ struct RepositoryDetailView: View {
                 await model.scan(repository.id)
             }
         }
+    }
+
+    private func categoryPicker(compact: Bool) -> some View {
+        @Bindable var model = model
+        let picker = Picker("Category", selection: $model.category) {
+            ForEach(Category.allCases) { category in
+                Text(category.title).tag(category)
+            }
+        }
+        return Group {
+            if compact {
+                picker.pickerStyle(.menu).fixedSize()
+            } else {
+                picker.pickerStyle(.segmented)
+            }
+        }
+        .labelsHidden()
+        .help("Category (⌘1 to ⌘9)")
+        .accessibilityIdentifier("categoryPicker")
     }
 }
 
